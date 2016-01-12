@@ -10,8 +10,11 @@ extern "C" {
 
 
 bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *p_config) {
-	sol_gpio_config config = {0, SOL_GPIO_DIR_OUT, false, SOL_GPIO_DRIVE_NONE, 
-		{SOL_GPIO_EDGE_BOTH, NULL, NULL, 0} };
+	sol_gpio_config config = {
+                SOL_GPIO_CONFIG_API_VERSION,
+                SOL_GPIO_DIR_OUT,
+                false, SOL_GPIO_DRIVE_NONE,
+                {SOL_GPIO_EDGE_BOTH, NULL, NULL, 0} };
 
 	VALIDATE_AND_ASSIGN(config, dir, sol_gpio_direction, IsUint32,
 	                	"(GPIO direction)", false, jsGPIOConfig,
