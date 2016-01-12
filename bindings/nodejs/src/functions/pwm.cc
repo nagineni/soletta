@@ -1,14 +1,14 @@
 extern "C" {
-#include <soletta/sol-pwm.h>
+#include <sol-pwm.h>
 }
 
 #include <v8.h>
 #include <node.h>
 #include <nan.h>
 
-#include "common.h"
-#include "structures/sol-js-pwm.h"
-#include "structures/handles.h"
+#include "../common.h"
+#include "../structures/sol-js-pwm.h"
+#include "../structures/handles.h"
 
 using namespace v8;
 
