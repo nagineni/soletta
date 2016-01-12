@@ -1,14 +1,14 @@
 extern "C" {
-#include <soletta/sol-gpio.h>
+#include <sol-gpio.h>
 }
 
 #include <v8.h>
 #include <node.h>
 #include <nan.h>
 
-#include "common.h"
-#include "structures/sol-js-gpio.h"
-#include "structures/handles.h"
+#include "../common.h"
+#include "../structures/sol-js-gpio.h"
+#include "../structures/handles.h"
 
 using namespace v8;
 
