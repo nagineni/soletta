@@ -3,9 +3,9 @@
 
 #include <v8.h>
 extern "C" {
-#include <soletta/sol-aio.h>
-#include <soletta/sol-gpio.h>
-#include <soletta/sol-pwm.h>
+#include <sol-aio.h>
+#include <sol-gpio.h>
+#include <sol-pwm.h>
 }
 
 v8::Local<v8::Array> js_sol_aio(sol_aio *handle);

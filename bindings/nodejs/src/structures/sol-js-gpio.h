@@ -3,7 +3,7 @@
 
 #include <v8.h>
 extern "C" {
-#include <soletta/sol-gpio.h>
+#include <sol-gpio.h>
 }
 
 bool c_sol_gpio_config(v8::Local<v8::Object> gpioConfig, sol_gpio_config *config);

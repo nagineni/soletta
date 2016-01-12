@@ -1,13 +1,13 @@
 extern "C" {
-#include <soletta/sol-aio.h>
+#include <sol-aio.h>
 }
 
 #include <v8.h>
 #include <node.h>
 #include <nan.h>
 
-#include "common.h"
-#include "structures/handles.h"
+#include "../common.h"
+#include "../structures/handles.h"
 
 using namespace v8;
 
