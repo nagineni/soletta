@@ -55,5 +55,6 @@ NAN_METHOD(bind_sol_gpio_get_value) {
     	return;
 	}
 
-	info.GetReturnValue().Set(Nan::New(sol_aio_get_value(aio)));
+	// FIXME: API has been changed.
+	// info.GetReturnValue().Set(Nan::New(sol_aio_get_value(aio)));
 }
