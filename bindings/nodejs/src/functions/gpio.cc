@@ -24,11 +24,11 @@ NAN_METHOD(bind_sol_gpio_open) {
 	pin = info[0]->Uint32Value();
 	if (!c_sol_gpio_config(info[1]->ToObject(), &config)) {
 		printf("Unable to extract sol_gpio_config\n");
-    	return;
+		return;
 	}
 
 	gpio = sol_gpio_open(pin, &config);
-	if ( gpio ) {
+	if (gpio) {
 		info.GetReturnValue().Set(js_sol_gpio(gpio));
 	}
 }
@@ -49,7 +49,7 @@ NAN_METHOD(bind_sol_gpio_close) {
 NAN_METHOD(bind_sol_gpio_write) {
 	VALIDATE_ARGUMENT_COUNT(info, 2);
 	VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
-	VALIDATE_ARGUMENT_TYPE(info, 0, IsBoolean);
+	VALIDATE_ARGUMENT_TYPE(info, 1, IsBoolean);
 
 	bool value;
 	sol_gpio *gpio = NULL;
