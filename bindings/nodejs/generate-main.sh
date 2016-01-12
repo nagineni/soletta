@@ -50,7 +50,7 @@ cat generated/main.h.prologue > generated/main.h || exit 1
 
 # Add constants and enums from selected files
 FILES=\
-'sol-platform.h'
+'sol-platform.h sol-aio.h sol-gpio.h sol-pwm.h'
 
 for file in $FILES; do
 	echo "#include <$file>" >> generated/main.h
@@ -99,7 +99,7 @@ for file in $FILES; do
 						new_enum = 0;
 					}
 					else
-					if ( inside_enum == 1 ) {
+					if ( inside_enum == 1 && ( $1 ~ /^[A-Z]/ ) ) {
 						enum_member = $1;
 						gsub( /,/, "", enum_member );
 						print "  SET_CONSTANT_NUMBER(bind_" enum_name ", " enum_member ");" >> "generated/main.cc"
