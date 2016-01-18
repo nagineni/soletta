@@ -18,7 +18,7 @@
 						"action": [
 							"sh",
 							"bindings/nodejs/build-csdk.sh",
-							'<!@(if test "x${npm_config_debug}x" == "xtruex"; then echo "--debug"; else echo ""; fi)'
+							'<!@(if test "x${npm_config_debug}x" = "xtruex"; then echo "--debug"; else echo ""; fi)'
 						]
 					} ]
 				}

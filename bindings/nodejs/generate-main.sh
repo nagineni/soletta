@@ -111,7 +111,7 @@ echo "" >> "generated/main.h"
 find src -type f | while read; do
 	cat "${REPLY}" | grep NAN_METHOD | while read; do
 		echo "$REPLY" | sed 's/).*$/);/' >> generated/main.h
-		echo "$REPLY" | sed -r 's/^\s*NAN_METHOD\s*\(\s*bind_([^)]*).*$/  SET_FUNCTION(exports, "\1");/' >> generated/main.c
+		echo "$REPLY" | sed -r 's/^\s*NAN_METHOD\s*\(\s*bind_([^)]*).*$/  SET_FUNCTION(exports, \1);/' >> generated/main.cc
 	done
 done
 
