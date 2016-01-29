@@ -1,8 +1,12 @@
 tests: $(SOL_LIB_OUTPUT) $(tests-out) $(modules-out)
 
 CHECK_DEPS := tests
+
 ifneq ($(USE_NODEJS),)
-CHECK_DEPS += check-bindings-nodejs
+check-nodejs_bindings: nodejs_bindings
+	node -p 'require( "./lowlevel" ).sol_platform_get_machine_id();'
+CHECK_DEPS += check-nodejs_bindings
+PHONY += check-nodejs_bindings
 endif
 
 check: $(CHECK_DEPS)
