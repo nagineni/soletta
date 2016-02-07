@@ -8,6 +8,17 @@ extern "C" {
 #include <string.h>
 }
 
+static void sol_gpio_read_callback(void *data, struct sol_gpio *gpio, bool value) {
+        Nan::HandleScope scope;
+        Nan::Callback *callback = (Nan::Callback *)data;
+        if (!callback)
+            return;
+
+        Local<Value> arguments[1] = {
+            Nan::New(value)
+        };
+        callback->Call(1, arguments);
+}
 
 bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *p_config) {
 	sol_gpio_config config = {
@@ -41,7 +52,17 @@ bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *p_co
 				.ToLocalChecked();
 		VALIDATE_VALUE_TYPE(poll_timeout, IsUint32, "GPIO in trigger_mode",
 			false);
-		config.in.trigger_mode = (sol_gpio_edge)trigger_mode->Uint32Value();		
+		config.in.trigger_mode = (sol_gpio_edge)trigger_mode->Uint32Value();
+
+		Local<Value> read_cb = Nan::Get(jsGPIOConfig,
+		        Nan::New("callback").ToLocalChecked()).ToLocalChecked();
+
+		if (read_cb->IsFunction()) {
+		    Nan::Callback *callback =
+		        new Nan::Callback(Local<Function>::Cast(read_cb));
+		    config.in.cb = sol_gpio_read_callback;
+		    config.in.user_data = callback;
+		}
 	}
 
 	memcpy(p_config, &config, sizeof(sol_gpio_config));
