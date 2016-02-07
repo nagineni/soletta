@@ -5,12 +5,17 @@ extern "C" {
 #include <v8.h>
 #include <node.h>
 #include <nan.h>
+#include <map>
 
 #include "../common.h"
+#include "../hijack.h"
 #include "../structures/sol-js-gpio.h"
 #include "../structures/handles.h"
 
 using namespace v8;
+
+// Associate the callback info with a gpio handle
+static std::map<sol_gpio *, Nan::Callback *> annotation;
 
 NAN_METHOD(bind_sol_gpio_open) {
 	VALIDATE_ARGUMENT_COUNT(info, 2);
@@ -23,13 +28,20 @@ NAN_METHOD(bind_sol_gpio_open) {
 
 	pin = info[0]->Uint32Value();
 	if (!c_sol_gpio_config(info[1]->ToObject(), &config)) {
-		printf("Unable to extract sol_gpio_config\n");
-		return;
+	    printf("Unable to extract sol_gpio_config\n");
+	    return;
 	}
 
+	Nan::Callback *callback = (Nan::Callback *)config.in.user_data;
 	gpio = sol_gpio_open(pin, &config);
 	if (gpio) {
-		info.GetReturnValue().Set(js_sol_gpio(gpio));
+	    info.GetReturnValue().Set(js_sol_gpio(gpio));
+	    if (callback) {
+	        annotation[gpio] = callback;
+	        hijack_ref();
+	    }
+	} else if (callback) {
+	    delete callback;
 	}
 }
 
@@ -43,7 +55,13 @@ NAN_METHOD(bind_sol_gpio_close) {
     	return;
 	}
 
+	Nan::Callback *callback = annotation[gpio];
 	sol_gpio_close(gpio);
+	if (callback) {
+	    annotation.erase(gpio);
+	    delete callback;
+	    hijack_unref();
+	}
 }
 
 NAN_METHOD(bind_sol_gpio_write) {
