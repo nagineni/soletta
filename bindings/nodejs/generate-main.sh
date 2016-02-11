@@ -48,7 +48,7 @@ cat bindings/nodejs/generated/main.h.prologue > bindings/nodejs/generated/main.h
 
 # Add constants and enums from selected files
 FILES=\
-'sol-platform.h sol-aio.h sol-gpio.h sol-pwm.h sol-uart.h'
+'sol-platform.h sol-aio.h sol-gpio.h sol-pwm.h sol-spi.h sol-uart.h'
 
 for file in $FILES; do
 	echo "#include <$file>" >> bindings/nodejs/generated/main.h

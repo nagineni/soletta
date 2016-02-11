@@ -50,6 +50,15 @@ bool c_sol_pwm(Local<Array> handle, sol_pwm **p_cHandle) {
   C_HANDLE(handle, sol_pwm *, p_cHandle);
 }
 
+Local<Array> js_sol_spi(struct sol_spi *handle) {
+  return jsArrayFromBytes(((unsigned char *)(&handle)),
+                          sizeof(sol_spi *));
+}
+
+bool c_sol_spi(Local<Array> handle, sol_spi **p_cHandle) {
+  C_HANDLE(handle, sol_spi *, p_cHandle);
+}
+
 Local<Array> js_sol_uart(struct sol_uart *handle) {
   return jsArrayFromBytes(((unsigned char *)(&handle)),
                           sizeof(sol_uart *));
