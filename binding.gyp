@@ -49,6 +49,7 @@
 						"bindings/nodejs/src/sol-uv-integration.c",
 						"bindings/nodejs/src/functions/aio.cc",
 						"bindings/nodejs/src/functions/gpio.cc",
+						"bindings/nodejs/src/functions/i2c.cc",
 						"bindings/nodejs/src/functions/pwm.cc",
 						"bindings/nodejs/src/functions/spi.cc",
 						"bindings/nodejs/src/functions/uart.cc",

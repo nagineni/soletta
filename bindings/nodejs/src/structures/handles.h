@@ -5,6 +5,7 @@
 extern "C" {
 #include <sol-aio.h>
 #include <sol-gpio.h>
+#include <sol-i2c.h>
 #include <sol-pwm.h>
 #include <sol-uart.h>
 #include <sol-spi.h>
@@ -21,6 +22,14 @@ bool c_sol_aio_pending(v8::Local<v8::Array> handle,
 v8::Local<v8::Array> js_sol_gpio(sol_gpio *handle);
 bool c_sol_gpio(v8::Local<v8::Array> handle,
                         sol_gpio **p_cHandle);
+
+v8::Local<v8::Array> js_sol_i2c(struct sol_i2c *handle);
+bool c_sol_i2c(v8::Local<v8::Array> handle,
+               sol_i2c **p_cHandle);
+
+v8::Local<v8::Array> js_sol_i2c_pending(struct sol_i2c_pending *handle);
+bool c_sol_i2c_pending(v8::Local<v8::Array> handle,
+                       sol_i2c_pending **p_cHandle);
 
 v8::Local<v8::Array> js_sol_pwm(sol_pwm *handle);
 bool c_sol_pwm(v8::Local<v8::Array> handle,
