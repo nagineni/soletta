@@ -50,6 +50,7 @@
 						"bindings/nodejs/src/functions/aio.cc",
 						"bindings/nodejs/src/functions/gpio.cc",
 						"bindings/nodejs/src/functions/pwm.cc",
+						"bindings/nodejs/src/functions/spi.cc",
 						"bindings/nodejs/src/functions/uart.cc",
 						"bindings/nodejs/src/functions/simple.cc",
 						"bindings/nodejs/src/functions/sol-platform-monitors.cc",
@@ -57,6 +58,7 @@
 						"bindings/nodejs/src/structures/js-handle.cc",
 						"bindings/nodejs/src/structures/sol-js-gpio.cc",
 						"bindings/nodejs/src/structures/sol-js-pwm.cc",
+						"bindings/nodejs/src/structures/sol-js-spi.cc",
 						"bindings/nodejs/src/structures/sol-js-uart.cc",
 					],
 					"include_dirs": [
