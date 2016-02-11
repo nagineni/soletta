@@ -41,6 +41,25 @@ bool c_sol_gpio(Local<Array> handle, sol_gpio **p_cHandle) {
   C_HANDLE(handle, sol_gpio *, p_cHandle);
 }
 
+
+Local<Array> js_sol_i2c(struct sol_i2c *handle) {
+  return jsArrayFromBytes(((unsigned char *)(&handle)),
+                          sizeof(sol_i2c *));
+}
+
+bool c_sol_i2c(Local<Array> handle, sol_i2c **p_cHandle) {
+  C_HANDLE(handle, sol_i2c *, p_cHandle);
+}
+
+Local<Array> js_sol_i2c_pending(struct sol_i2c_pending *handle) {
+  return jsArrayFromBytes(((unsigned char *)(&handle)),
+                          sizeof(sol_i2c_pending *));
+}
+
+bool c_sol_i2c_pending(Local<Array> handle, sol_i2c_pending **p_cHandle) {
+  C_HANDLE(handle, sol_i2c_pending *, p_cHandle);
+}
+
 Local<Array> js_sol_pwm(sol_pwm *handle) {
   return jsArrayFromBytes(((unsigned char *)(&handle)),
                           sizeof(sol_pwm *));
