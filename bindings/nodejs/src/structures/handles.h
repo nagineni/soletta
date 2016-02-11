@@ -12,6 +12,10 @@ v8::Local<v8::Array> js_sol_aio(sol_aio *handle);
 bool c_sol_aio(v8::Local<v8::Array> handle,
                         sol_aio **p_cHandle);
 
+v8::Local<v8::Array> js_sol_aio_pending(sol_aio_pending *handle);
+bool c_sol_aio_pending(v8::Local<v8::Array> handle,
+                        sol_aio_pending **p_cHandle);
+
 v8::Local<v8::Array> js_sol_gpio(sol_gpio *handle);
 bool c_sol_gpio(v8::Local<v8::Array> handle,
                         sol_gpio **p_cHandle);

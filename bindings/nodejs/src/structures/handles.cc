@@ -51,6 +51,15 @@ bool c_sol_aio(Local<Array> handle, sol_aio **p_cHandle) {
   C_HANDLE(handle, sol_aio *, p_cHandle);
 }
 
+Local<Array> js_sol_aio_pending(sol_aio_pending *handle) {
+  return jsArrayFromBytes(((unsigned char *)(&handle)),
+                          sizeof(sol_aio_pending *));
+}
+
+bool c_sol_aio_pending(Local<Array> handle, sol_aio_pending **p_cHandle) {
+  C_HANDLE(handle, sol_aio_pending *, p_cHandle);
+}
+
 Local<Array> js_sol_gpio(sol_gpio *handle) {
   return jsArrayFromBytes(((unsigned char *)(&handle)),
                           sizeof(sol_gpio *));
