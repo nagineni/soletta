@@ -7,6 +7,7 @@ extern "C" {
 #include <nan.h>
 
 #include "../common.h"
+#include "../hijack.h"
 #include "../structures/handles.h"
 
 using namespace v8;
@@ -45,9 +46,26 @@ NAN_METHOD(bind_sol_aio_close) {
 	sol_aio_close(aio);
 }
 
-NAN_METHOD(bind_sol_gpio_get_value) {
-	VALIDATE_ARGUMENT_COUNT(info, 1);
+
+static void sol_aio_read_cb(void *cb_data, struct sol_aio *aio,
+                            int32_t ret)
+{
+    Nan::HandleScope scope;
+    Nan::Callback *callback = (Nan::Callback *)cb_data;
+
+    Local<Value> arguments[1] = {
+        Nan::New(ret)
+    };
+    callback->Call(1, arguments);
+
+    delete callback;
+    hijack_unref();
+}
+
+NAN_METHOD(bind_sol_aio_get_value) {
+	VALIDATE_ARGUMENT_COUNT(info, 2);
 	VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 1, IsFunction);
 
 	sol_aio *aio = NULL;
 
@@ -55,5 +73,37 @@ NAN_METHOD(bind_sol_gpio_get_value) {
     	return;
 	}
 
-	info.GetReturnValue().Set(Nan::New(sol_aio_get_value(aio)));
+    Nan::Callback *callback =
+        new Nan::Callback(Local<Function>::Cast(info[1]));
+
+    sol_aio_pending *aio_pending =
+        sol_aio_get_value(aio, sol_aio_read_cb, callback);
+
+    if (!aio_pending) {
+        delete callback;
+        return;
+    } else {
+        hijack_ref();
+    }
+
+    info.GetReturnValue().Set(js_sol_aio_pending(aio_pending));
+}
+
+NAN_METHOD(bind_sol_aio_pending_cancel)
+{
+    VALIDATE_ARGUMENT_COUNT(info, 2);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 1, IsArray);
+
+    sol_aio *aio = NULL;
+
+    if (!c_sol_aio(Local<Array>::Cast(info[0]), &aio))
+        return;
+
+    sol_aio_pending *aio_pending = NULL;
+    if (!c_sol_aio_pending(Local<Array>::Cast(info[1]), &aio_pending))
+        return;
+
+    sol_aio_pending_cancel(aio, aio_pending);
+    hijack_unref();
 }
