@@ -49,3 +49,12 @@ Local<Array> js_sol_pwm(sol_pwm *handle) {
 bool c_sol_pwm(Local<Array> handle, sol_pwm **p_cHandle) {
   C_HANDLE(handle, sol_pwm *, p_cHandle);
 }
+
+Local<Array> js_sol_uart(struct sol_uart *handle) {
+  return jsArrayFromBytes(((unsigned char *)(&handle)),
+                          sizeof(sol_uart *));
+}
+
+bool c_sol_uart(Local<Array> handle, sol_uart **p_cHandle) {
+  C_HANDLE(handle, sol_uart *, p_cHandle);
+}
