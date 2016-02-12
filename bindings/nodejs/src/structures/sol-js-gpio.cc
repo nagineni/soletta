@@ -50,7 +50,7 @@ bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *p_co
 		Local<Value> trigger_mode =
 			Nan::Get(jsGPIOConfig, Nan::New("trigger_mode").ToLocalChecked())
 				.ToLocalChecked();
-		VALIDATE_VALUE_TYPE(poll_timeout, IsUint32, "GPIO in trigger_mode",
+		VALIDATE_VALUE_TYPE(trigger_mode, IsUint32, "GPIO in trigger_mode",
 			false);
 		config.in.trigger_mode = (sol_gpio_edge)trigger_mode->Uint32Value();
 
