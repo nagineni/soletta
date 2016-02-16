@@ -1,6 +1,7 @@
 #include <nan.h>
 #include "sol-js-gpio.h"
 #include "../common.h"
+#include "handles.h"
 
 using namespace v8;
 
@@ -14,10 +15,11 @@ static void sol_gpio_read_callback(void *data, struct sol_gpio *gpio, bool value
         if (!callback)
             return;
 
-        Local<Value> arguments[1] = {
+        Local<Value> arguments[2] = {
+            js_sol_gpio(gpio),
             Nan::New(value)
         };
-        callback->Call(1, arguments);
+        callback->Call(2, arguments);
 }
 
 bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *p_config) {
