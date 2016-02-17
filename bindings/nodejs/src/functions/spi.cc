@@ -82,17 +82,21 @@ static void sol_spi_transfer_cb(void *cb_data, struct sol_spi *spi,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
+    if (!callback)
+        return;
+
     Local <Object> buf;
 
     if (status >= 0)
         buf = Nan::NewBuffer((char *)rx, status).ToLocalChecked();
 
-    Local<Value> arguments[2] =	{
-        Nan::New((int)status),
-        buf
+    Local<Value> arguments[3] = {
+        js_sol_spi(spi),
+        buf,
+        Nan::New((int)status)
     };
 
-    callback->Call(1, arguments);
+    callback->Call(3, arguments);
     delete callback;
     free((uint8_t *)tx);
     free(rx);
