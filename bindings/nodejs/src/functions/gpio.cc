@@ -28,7 +28,7 @@ NAN_METHOD(bind_sol_gpio_open) {
 
 	pin = info[0]->Uint32Value();
 	if (!c_sol_gpio_config(info[1]->ToObject(), &config)) {
-	    Nan::ThrowError(("Unable to extract sol_gpio_config\n");
+	    Nan::ThrowError("Unable to extract sol_gpio_config");
 	    return;
 	}
 

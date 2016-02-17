@@ -86,9 +86,9 @@ NAN_METHOD(bind_sol_uart_close)
         return;
 
     Nan::Callback *callback = annotation[uart];
-    annotation.erase(uart);
     sol_uart_close(uart);
     if (callback) {
+        annotation.erase(uart);
         delete callback;
         hijack_unref();
     }
@@ -99,11 +99,17 @@ static void sol_uart_write_callback(void *data, struct sol_uart *uart,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *) data;
+    Local <Object> buf;
 
-    Local<Value> arguments[1] = {
+    if (status >= 0)
+        buf = Nan::NewBuffer((char *)tx, status).ToLocalChecked();
+
+    Local<Value> arguments[3] = {
+        js_sol_uart(uart),
+        buf,
         Nan::New(status)
     };
-    callback->Call(1, arguments);
+    callback->Call(3, arguments);
 
     delete callback;
     free(tx);

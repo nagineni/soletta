@@ -33,6 +33,7 @@
 #include <nan.h>
 #include "../common.h"
 #include "../hijack.h"
+#include "handles.h"
 
 #include "sol-js-uart.h"
 
@@ -43,12 +44,15 @@ static void sol_uart_rx_callback(void *user_data, struct sol_uart *uart,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)user_data;
+    if (!callback)
+        return;
 
-    Local<Value> arguments[1] =	{
+    Local<Value> arguments[2] = {
+        js_sol_uart(uart),
         Nan::New(byte_read)
     };
 
-    callback->Call(1, arguments);
+    callback->Call(2, arguments);
 }
 
 bool c_sol_uart_config(v8::Local<v8::Object> jsUARTConfig,

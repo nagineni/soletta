@@ -119,12 +119,18 @@ static void sol_i2c_write_cb(void *cb_data, struct sol_i2c *i2c,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
+    Local <Object> buf;
 
-    Local<Value> arguments[1] = {
+    if (status >= 0)
+        buf = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+
+    Local<Value> arguments[3] = {
+        js_sol_i2c(i2c),
+        buf,
         Nan::New((int)status)
     };
 
-    callback->Call(1, arguments);
+    callback->Call(3, arguments);
     delete callback;
     free(data);
     hijack_unref();
@@ -180,12 +186,19 @@ static void sol_i2c_write_reg_cb(void *cb_data, struct sol_i2c *i2c,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
+    Local <Object> buf;
 
-    Local<Value> arguments[1] = {
+    if (status >= 0)
+        buf = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+
+    Local<Value> arguments[4] = {
+        js_sol_i2c(i2c),
+        Nan::New(reg),
+        buf,
         Nan::New((int)status)
     };
 
-    callback->Call(1, arguments);
+    callback->Call(4, arguments);
 
     delete callback;
     free(data);
@@ -246,11 +259,12 @@ static void sol_i2c_write_quick_cb(void *cb_data, struct sol_i2c *i2c,
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
 
-    Local<Value> arguments[1] = {
+    Local<Value> arguments[2] = {
+        js_sol_i2c(i2c),
         Nan::New((int)status)
     };
 
-    callback->Call(1, arguments);
+    callback->Call(2, arguments);
     delete callback;
     hijack_unref();
 }
@@ -293,12 +307,13 @@ static void sol_i2c_read_cb(void *cb_data, struct sol_i2c *i2c, uint8_t *data,
     if (status >= 0)
         buf = Nan::NewBuffer((char *)data, status).ToLocalChecked();
 
-    Local<Value> arguments[2] = {
-        Nan::New((int)status),
-        buf
+    Local<Value> arguments[3] = {
+        js_sol_i2c(i2c),
+        buf,
+        Nan::New((int)status)
     };
 
-    callback->Call(2, arguments);
+    callback->Call(3, arguments);
     delete callback;
     free(data);
     hijack_unref();
@@ -350,12 +365,14 @@ static void sol_i2c_read_reg_cb(void *cb_data, struct sol_i2c *i2c,
     if (status >= 0)
         buf = Nan::NewBuffer((char *)data, status).ToLocalChecked();
 
-    Local<Value> arguments[2] = {
-        Nan::New((int)status),
-        buf
+    Local<Value> arguments[4] = {
+        js_sol_i2c(i2c),
+        Nan::New(reg),
+        buf,
+        Nan::New((int)status)
     };
 
-    callback->Call(2, arguments);
+    callback->Call(4, arguments);
     delete callback;
     free(data);
     hijack_unref();
