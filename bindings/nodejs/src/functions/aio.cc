@@ -33,6 +33,43 @@ NAN_METHOD(bind_sol_aio_open) {
 	}
 }
 
+NAN_METHOD(bind_sol_aio_open_by_label) {
+    VALIDATE_ARGUMENT_COUNT(info, 2);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsString);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
+
+    uint32_t precision;
+    sol_aio *aio = NULL;
+
+    precision = info[1]->Uint32Value();
+
+    aio = sol_aio_open_by_label((const char *)*String::Utf8Value(info[0]), precision);
+    if ( aio ) {
+        info.GetReturnValue().Set(js_sol_aio(aio));
+    }
+}
+
+NAN_METHOD(bind_sol_aio_open_raw) {
+    VALIDATE_ARGUMENT_COUNT(info, 3);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsInt32);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsInt32);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 2, IsUint32);
+
+    int32_t device;
+    int32_t pin;
+    uint32_t precision;
+    sol_aio *aio = NULL;
+
+    device = info[0]->Int32Value();
+    pin = info[1]->Int32Value();
+    precision = info[2]->Uint32Value();
+
+    aio = sol_aio_open_raw(device, pin, precision);
+    if ( aio ) {
+        info.GetReturnValue().Set(js_sol_aio(aio));
+    }
+}
+
 NAN_METHOD(bind_sol_aio_close) {
 	VALIDATE_ARGUMENT_COUNT(info, 1);
 	VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
