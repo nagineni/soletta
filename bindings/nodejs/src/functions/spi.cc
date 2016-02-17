@@ -53,7 +53,7 @@ NAN_METHOD(bind_sol_spi_open)
     sol_spi *spi = NULL;
 
     if (!c_sol_spi_config(info[1]->ToObject(), &config)) {
-        printf("Unable to extract sol_spi_config\n");
+        Nan::ThrowError("Unable to extract sol_spi_config\n");
         return;
     }
 

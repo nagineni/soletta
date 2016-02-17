@@ -58,7 +58,7 @@ NAN_METHOD(bind_sol_uart_open)
     sol_uart *uart = NULL;
 
     if (!c_sol_uart_config(info[1]->ToObject(), &config)) {
-        printf("Unable to extract sol_uart_config\n");
+        Nan::ThrowError("Unable to extract sol_uart_config\n");
         return;
     }
 
