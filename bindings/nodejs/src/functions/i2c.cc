@@ -46,25 +46,48 @@ using namespace v8;
 
 NAN_METHOD(bind_sol_i2c_open)
 {
-    VALIDATE_ARGUMENT_COUNT(info, 4);
+    VALIDATE_ARGUMENT_COUNT(info, 2);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsUint32);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
-    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 2, IsUint32);
-    VALIDATE_ARGUMENT_TYPE(info, 3, IsBoolean);
 
     sol_i2c *i2c = NULL;
-    sol_i2c_speed speed = (sol_i2c_speed) info[2]->Uint32Value();
-    bool raw = info[3]->BooleanValue();
+    sol_i2c_speed speed = (sol_i2c_speed) info[1]->Uint32Value();
 
-    if (raw)
-        i2c = sol_i2c_open_raw(info[0]->Uint32Value(), speed);
-    else
-        i2c = sol_i2c_open(info[0]->Uint32Value(), speed);
+    i2c = sol_i2c_open(info[0]->Uint32Value(), speed);
 
     if (i2c) {
-        sol_i2c_set_slave_address(i2c, info[1]->Uint32Value());
         info.GetReturnValue().Set(js_sol_i2c(i2c));
     }
+}
+
+NAN_METHOD(bind_sol_i2c_open_raw)
+{
+    VALIDATE_ARGUMENT_COUNT(info, 2);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsUint32);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
+
+    sol_i2c *i2c = NULL;
+    sol_i2c_speed speed = (sol_i2c_speed) info[1]->Uint32Value();
+    i2c = sol_i2c_open_raw(info[0]->Uint32Value(), speed);
+
+    if (i2c) {
+        info.GetReturnValue().Set(js_sol_i2c(i2c));
+    }
+}
+
+NAN_METHOD(bind_sol_i2c_set_slave_address)
+{
+    VALIDATE_ARGUMENT_COUNT(info, 2);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
+
+    sol_i2c *i2c = NULL;
+
+    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
+        return;
+
+    bool returnValue = sol_i2c_set_slave_address(i2c, info[1]->Uint32Value());
+    info.GetReturnValue().Set(Nan::New(returnValue));
 }
 
 NAN_METHOD(bind_sol_i2c_close)
@@ -78,6 +101,19 @@ NAN_METHOD(bind_sol_i2c_close)
         return;
 
     sol_i2c_close(i2c);
+}
+
+NAN_METHOD(bind_sol_i2c_close_raw)
+{
+    VALIDATE_ARGUMENT_COUNT(info, 1);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+
+    sol_i2c *i2c = NULL;
+
+    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
+        return;
+
+    sol_i2c_close_raw(i2c);
 }
 
 NAN_METHOD(bind_sol_i2c_busy)
@@ -119,14 +155,19 @@ static void sol_i2c_write_cb(void *cb_data, struct sol_i2c *i2c,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
-    Local <Object> buf;
+    Local<Value> buffer;
 
-    if (status >= 0)
-        buf = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+    if (status >= 0) {
+        Local <Object> bufObj;
+        bufObj = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+        buffer = bufObj;
+    } else {
+        buffer = Nan::Null();
+    }
 
     Local<Value> arguments[3] = {
         js_sol_i2c(i2c),
-        buf,
+        buffer,
         Nan::New((int)status)
     };
 
@@ -186,15 +227,20 @@ static void sol_i2c_write_reg_cb(void *cb_data, struct sol_i2c *i2c,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
-    Local <Object> buf;
+    Local<Value> buffer;
 
-    if (status >= 0)
-        buf = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+    if (status >= 0) {
+        Local <Object> bufObj;
+        bufObj = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+        buffer = bufObj;
+    } else {
+        buffer = Nan::Null();
+    }
 
     Local<Value> arguments[4] = {
         js_sol_i2c(i2c),
         Nan::New(reg),
-        buf,
+        buffer,
         Nan::New((int)status)
     };
 
@@ -210,7 +256,7 @@ NAN_METHOD(bind_sol_i2c_write_register)
     VALIDATE_ARGUMENT_COUNT(info, 4);
     VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
-    VALIDATE_ARGUMENT_TYPE(info, 2, IsObject);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 2, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 3, IsFunction);
 
     uint8_t *outputBuffer = (uint8_t *) 0;
@@ -302,14 +348,19 @@ static void sol_i2c_read_cb(void *cb_data, struct sol_i2c *i2c, uint8_t *data,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
-    Local<Object> buf;
+    Local<Value> buffer;
 
-    if (status >= 0)
-        buf = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+    if (status >= 0) {
+        Local <Object> bufObj;
+        bufObj = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+        buffer = bufObj;
+    } else {
+        buffer = Nan::Null();
+    }
 
     Local<Value> arguments[3] = {
         js_sol_i2c(i2c),
-        buf,
+        buffer,
         Nan::New((int)status)
     };
 
@@ -321,9 +372,10 @@ static void sol_i2c_read_cb(void *cb_data, struct sol_i2c *i2c, uint8_t *data,
 
 NAN_METHOD(bind_sol_i2c_read)
 {
-    VALIDATE_ARGUMENT_COUNT(info, 2);
+    VALIDATE_ARGUMENT_COUNT(info, 3);
     VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
+    VALIDATE_ARGUMENT_TYPE(info, 2, IsFunction);
 
     uint8_t *outputBuffer = (uint8_t *) 0;
     sol_i2c *i2c = NULL;
@@ -360,15 +412,20 @@ static void sol_i2c_read_reg_cb(void *cb_data, struct sol_i2c *i2c,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
-    Local<Object> buf;
+    Local<Value> buffer;
 
-    if (status >= 0)
-        buf = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+    if (status >= 0) {
+        Local <Object> bufObj;
+        bufObj = Nan::NewBuffer((char *)data, status).ToLocalChecked();
+        buffer = bufObj;
+    } else {
+        buffer = Nan::Null();
+    }
 
     Local<Value> arguments[4] = {
         js_sol_i2c(i2c),
         Nan::New(reg),
-        buf,
+        buffer,
         Nan::New((int)status)
     };
 
