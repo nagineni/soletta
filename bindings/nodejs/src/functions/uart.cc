@@ -99,14 +99,19 @@ static void sol_uart_write_callback(void *data, struct sol_uart *uart,
 {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *) data;
-    Local <Object> buf;
+    Local<Value> buffer;
 
-    if (status >= 0)
-        buf = Nan::NewBuffer((char *)tx, status).ToLocalChecked();
+    if (status >= 0) {
+        Local <Object> bufObj;
+        bufObj = Nan::NewBuffer((char *)tx, status).ToLocalChecked();
+        buffer = bufObj;
+    } else {
+        buffer = Nan::Null();
+    }
 
     Local<Value> arguments[3] = {
         js_sol_uart(uart),
-        buf,
+        buffer,
         Nan::New(status)
     };
     callback->Call(3, arguments);
@@ -120,7 +125,7 @@ NAN_METHOD(bind_sol_uart_write)
 {
     VALIDATE_ARGUMENT_COUNT(info, 3);
     VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
-    VALIDATE_ARGUMENT_TYPE(info, 1, IsObject);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 2, IsFunction);
 
     unsigned char *outputBuffer = (unsigned char *) 0;
