@@ -23,10 +23,6 @@
 
 using namespace v8;
 
-extern "C" {
-#include <string.h>
-}
-
 static void sol_gpio_read_callback(void *data, struct sol_gpio *gpio, bool value) {
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)data;
