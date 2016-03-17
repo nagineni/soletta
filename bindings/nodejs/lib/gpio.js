@@ -81,7 +81,6 @@ var GPIOPin = function( pin ) {
 
 require( "util" ).inherits( GPIOPin, require( "events" ).EventEmitter );
 
-
 _.extend( GPIOPin.prototype, {
     _isGPIOPin: true,
     onchange: null,
@@ -89,7 +88,6 @@ _.extend( GPIOPin.prototype, {
     read: function() {
         return new Promise( _.bind( function( fulfill, reject ) {
 
-            //FIXME: Soletta returns negative errno.
             fulfill( soletta.sol_gpio_read( this._pin ) );
         }, this ) );
     },
