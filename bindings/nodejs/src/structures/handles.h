@@ -21,9 +21,7 @@
 
 #include <v8.h>
 extern "C" {
-#include <sol-aio.h>
 #include <sol-gpio.h>
-#include <sol-pwm.h>
 }
 
 v8::Local<v8::Array> js_sol_gpio(sol_gpio *handle);
