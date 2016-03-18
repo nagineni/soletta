@@ -26,6 +26,6 @@ extern "C" {
 
 v8::Local<v8::Array> js_sol_gpio(sol_gpio *handle);
 bool c_sol_gpio(v8::Local<v8::Array> handle,
-                        sol_gpio **p_cHandle);
+    sol_gpio **p_cHandle);
 
 #endif /* __SOLETTA_JS_HANDLES_H__ */
