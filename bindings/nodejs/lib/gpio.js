@@ -19,13 +19,6 @@
  var soletta = require( 'bindings' )( 'soletta' ),
     _ = require( 'lodash' );
 
-var edges = {
-    "none": soletta.sol_gpio_edge.SOL_GPIO_EDGE_NONE,
-    "rising": soletta.sol_gpio_edge.SOL_GPIO_EDGE_RISING,
-    "falling": soletta.sol_gpio_edge.SOL_GPIO_EDGE_FALLING,
-    "any": soletta.sol_gpio_edge.SOL_GPIO_EDGE_BOTH,
-}
-
 function pin_read_cb( pin, value ) {
     _pins[ pin ].dispatchEvent( "change", {
                         type: "change",
@@ -48,14 +41,12 @@ exports.open = function( init ) {
             drive_mode = soletta.sol_gpio_drive.SOL_GPIO_DRIVE_PULL_DOWN;
 
         if ( init.direction == "in" ) {
-            var edge = edges[init.edge];
-
             config = {
                 dir: soletta.sol_gpio_direction.SOL_GPIO_DIR_IN,
                 active_low: init.activeLow,
                 poll_timeout: init.poll,
                 drive_mode: drive_mode,
-                trigger_mode: edge,
+                trigger_mode: init.edge,
                 callback: pin_read_cb,
             }
 

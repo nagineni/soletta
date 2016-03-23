@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-extern "C" {
 #include <sol-gpio.h>
-}
 
 #include <v8.h>
 #include <node.h>
