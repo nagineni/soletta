@@ -94,6 +94,6 @@
         .ToLocalChecked(); \
     VALIDATE_VALUE_TYPE(memberName, typecheck, message "." #memberName, \
     failReturn); \
-    destination.memberName = (destinationType)memberName->accessor();
+    destination->memberName = (destinationType)memberName->accessor();
 
 #endif /* ndef __SOLETTA_NODE_COMMON_H__ */

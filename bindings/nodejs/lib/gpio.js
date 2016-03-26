@@ -19,26 +19,21 @@
  var soletta = require( 'bindings' )( 'soletta' ),
     _ = require( 'lodash' );
 
-function pin_read_cb( pin, value ) {
-    _pins[ pin ].dispatchEvent( "change", {
-                        type: "change",
-                        value: value
-    } );
-}
-
-var _pins = new Array();
-
 exports.open = function( init ) {
     return new Promise( function( fulfill, reject ) {
         var pin = init.pin;
         var dir = 0;
         var drive_mode = 0;
         var config = null;
+        var gpiopin;
+        var callback_data = [];
 
         if ( init.pullup )
             drive_mode = soletta.sol_gpio_drive.SOL_GPIO_DRIVE_PULL_UP;
-        else
+        else if ( init.pullup === false )
             drive_mode = soletta.sol_gpio_drive.SOL_GPIO_DRIVE_PULL_DOWN;
+        else
+            drive_mode = soletta.sol_gpio_drive.SOL_GPIO_DRIVE_NONE;
 
         if ( init.direction == "in" ) {
             config = {
@@ -47,7 +42,12 @@ exports.open = function( init ) {
                 poll_timeout: init.poll,
                 drive_mode: drive_mode,
                 trigger_mode: init.edge,
-                callback: pin_read_cb,
+                callback: function( pin, value ) {
+                    callback_data[0].dispatchEvent( "change", {
+                        type: "change",
+                        value: value
+                    } );
+                },
             }
 
         } else {
@@ -58,7 +58,9 @@ exports.open = function( init ) {
             }
         }
 
-        fulfill( GPIOPin( soletta.sol_gpio_open( pin, config ) ) );
+        gpiopin = GPIOPin( soletta.sol_gpio_open( pin, config ) );
+        callback_data.push( gpiopin );
+        fulfill( gpiopin );
     });
 
 }
@@ -67,7 +69,6 @@ var GPIOPin = function( pin ) {
     if ( !this._isGPIOPin )
         return new GPIOPin( pin );
     this._pin = pin;
-    _pins[ pin ] = this;
 }
 
 require( "util" ).inherits( GPIOPin, require( "events" ).EventEmitter );
@@ -91,7 +92,6 @@ _.extend( GPIOPin.prototype, {
 
     close: function() {
         return new Promise( _.bind( function( fulfill, reject ) {
-            _pins[ _pin ] = null;
             fulfill( soletta.sol_gpio_close( this._pin) );
         }, this ) );
     },
