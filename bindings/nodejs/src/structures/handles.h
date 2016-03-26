@@ -20,9 +20,7 @@
 #define __SOLETTA_JS_HANDLES_H__
 
 #include <v8.h>
-extern "C" {
 #include <sol-gpio.h>
-}
 
 v8::Local<v8::Array> js_sol_gpio(sol_gpio *handle);
 bool c_sol_gpio(v8::Local<v8::Array> handle,
