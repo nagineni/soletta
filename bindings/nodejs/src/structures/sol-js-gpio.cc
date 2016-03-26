@@ -53,15 +53,15 @@ static void sol_gpio_read_callback(void *data, struct sol_gpio *gpio, bool value
 bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *config) {
     SOL_SET_API_VERSION(config->api_version = SOL_GPIO_CONFIG_API_VERSION; )
 
-    VALIDATE_AND_ASSIGN(config, dir, sol_gpio_direction, IsUint32,
+    VALIDATE_AND_ASSIGN_PTR(config, dir, sol_gpio_direction, IsUint32,
                         "(GPIO direction)", false, jsGPIOConfig,
                         Uint32Value);
 
-    VALIDATE_AND_ASSIGN(config, drive_mode, sol_gpio_drive, IsUint32,
+    VALIDATE_AND_ASSIGN_PTR(config, drive_mode, sol_gpio_drive, IsUint32,
                         "(GPIO pull-up/pull-down resistor)", false, jsGPIOConfig,
                         Uint32Value);
 
-    VALIDATE_AND_ASSIGN(config, active_low, bool, IsBoolean,
+    VALIDATE_AND_ASSIGN_PTR(config, active_low, bool, IsBoolean,
                         "(GPIO active_low state)", false, jsGPIOConfig,
                         BooleanValue);
 
