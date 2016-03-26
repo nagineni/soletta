@@ -28,9 +28,9 @@ static sol_gpio_edge sol_edge_from_string(Local<String> jsString) {
   if (strcmp((const char *)*(String::Utf8Value(jsString)), "none") == 0)
     edge = SOL_GPIO_EDGE_NONE;
   else if (strcmp((const char *)*(String::Utf8Value(jsString)), "rising") == 0)
-    edge = SOL_GPIO_EDGE_RISING
+    edge = SOL_GPIO_EDGE_RISING;
   else if (strcmp((const char *)*(String::Utf8Value(jsString)), "falling") == 0)
-    edge = SOL_GPIO_EDGE_FALLING
+    edge = SOL_GPIO_EDGE_FALLING;
   else if (strcmp((const char *)*(String::Utf8Value(jsString)), "any") == 0)
     edge = SOL_GPIO_EDGE_ANY;
 
