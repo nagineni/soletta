@@ -63,25 +63,25 @@ NAN_METHOD(bind_sol_gpio_open) {
     gpio_data->callback = NULL;
 
     if (!c_sol_gpio_config(info[1]->ToObject(), gpio_data, &config)) {
+        delete gpio_data;
         Nan::ThrowError("Unable to extract sol_gpio_config\n");
         return;
     }
 
-    Nan::Callback *callback = NULL;
-    if (config.dir == SOL_GPIO_DIR_IN)
-        callback = gpio_data->callback;
+    Nan::Callback *callback = gpio_data->callback;
+    if (callback)
+        config.in.cb = sol_gpio_read_callback;
+
     gpio = sol_gpio_open(pin, &config);
     if (gpio) {
         gpio_data->gpio = gpio;
         if (callback) {
-            bool ret = hijack_ref();
-            if (!ret) {
+            if (!hijack_ref()) {
                 delete callback;
                 delete gpio_data;
                 Nan::ThrowError("Failed to ref for mainloop");
                 return;
             }
-            config.in.cb = sol_gpio_read_callback;
         }
 
         info.GetReturnValue().Set(SolGpio::New(gpio_data));
