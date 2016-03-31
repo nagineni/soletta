@@ -26,12 +26,28 @@
 #include "../common.h"
 #include "../hijack.h"
 #include "../structures/sol-js-gpio.h"
-#include "../structures/handles.h"
+#include "../structures/js-handle.h"
 
 using namespace v8;
 
-// Associate the callback info with a gpio handle
-static std::map<sol_gpio *, Nan::Callback *> annotation;
+class SolGpio : public JSHandle<SolGpio> {
+public:
+    static const char *jsClassName() { return "SolGpio"; }
+};
+
+static void sol_gpio_read_callback(void *data, struct sol_gpio *gpio, bool value) {
+    Nan::HandleScope scope;
+    sol_gpio_data *gpio_data = (sol_gpio_data *)data;
+    Nan::Callback *callback = gpio_data->callback;
+    if (!callback)
+        return;
+
+    Local<Value> arguments[2] = {
+        SolGpio::New(gpio_data),
+        Nan::New(value)
+    };
+    callback->Call(2, arguments);
+}
 
 NAN_METHOD(bind_sol_gpio_open) {
     VALIDATE_ARGUMENT_COUNT(info, 2);
@@ -43,39 +59,55 @@ NAN_METHOD(bind_sol_gpio_open) {
     sol_gpio *gpio = NULL;
 
     pin = info[0]->Uint32Value();
-    if (!c_sol_gpio_config(info[1]->ToObject(), &config)) {
-        printf("Unable to extract sol_gpio_config\n");
+    sol_gpio_data *gpio_data = new sol_gpio_data;
+    if (!c_sol_gpio_config(info[1]->ToObject(), gpio_data, &config)) {
+        Nan::ThrowError("Unable to extract sol_gpio_config\n");
         return;
     }
 
-    Nan::Callback *callback = (Nan::Callback *)config.in.user_data;
+    Nan::Callback *callback = NULL;
+    if (config.dir == SOL_GPIO_DIR_IN)
+        callback = (Nan::Callback *)config.in.user_data;
     gpio = sol_gpio_open(pin, &config);
     if (gpio) {
-        info.GetReturnValue().Set(js_sol_gpio(gpio));
+        gpio_data->gpio = gpio;
+        gpio_data->callback = callback;
         if (callback) {
-            annotation[gpio] = callback;
-            hijack_ref();
+            bool ret = hijack_ref();
+            if (!ret) {
+                delete callback;
+                delete gpio_data;
+                Nan::ThrowError("Failed to ref for mainloop");
+                return;
+            }
+            config.in.cb = sol_gpio_read_callback;
         }
+
+        info.GetReturnValue().Set(SolGpio::New(gpio_data));
+        return;
     } else if (callback) {
         delete callback;
     }
+
+    delete gpio_data;
 }
 
 NAN_METHOD(bind_sol_gpio_close) {
     VALIDATE_ARGUMENT_COUNT(info, 1);
     VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    Local<Object> jsGpio = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_gpio_data *gpio_data = (sol_gpio_data *)SolGpio::Resolve(jsGpio);
+    sol_gpio *gpio;
 
-    sol_gpio *gpio = NULL;
-
-    if (!c_sol_gpio(Local<Array>::Cast(info[0]), &gpio)) {
+    if (!gpio_data)
         return;
-    }
+    gpio = gpio_data->gpio;
 
-    Nan::Callback *callback = annotation[gpio];
+    Nan::Callback *callback = gpio_data->callback;
     sol_gpio_close(gpio);
     if (callback) {
-        annotation.erase(gpio);
         delete callback;
+        delete gpio_data;
         hijack_unref();
     }
 }
@@ -84,14 +116,15 @@ NAN_METHOD(bind_sol_gpio_write) {
     VALIDATE_ARGUMENT_COUNT(info, 2);
     VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
     VALIDATE_ARGUMENT_TYPE(info, 1, IsBoolean);
-
     bool value;
-    sol_gpio *gpio = NULL;
+    Local<Object> jsGpio = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_gpio_data *gpio_data = (sol_gpio_data *)SolGpio::Resolve(jsGpio);
+    sol_gpio *gpio;
 
-    if (!c_sol_gpio(Local<Array>::Cast(info[0]), &gpio)) {
+    if (!gpio_data)
         return;
-    }
 
+    gpio = gpio_data->gpio;
     value = info[1]->BooleanValue();
 
     info.GetReturnValue().Set(Nan::New(sol_gpio_write(gpio, value)));
@@ -100,12 +133,13 @@ NAN_METHOD(bind_sol_gpio_write) {
 NAN_METHOD(bind_sol_gpio_read) {
     VALIDATE_ARGUMENT_COUNT(info, 1);
     VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    Local<Object> jsGpio = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_gpio_data *gpio_data = (sol_gpio_data *)SolGpio::Resolve(jsGpio);
+    sol_gpio *gpio;
 
-    sol_gpio *gpio = NULL;
-
-    if (!c_sol_gpio(Local<Array>::Cast(info[0]), &gpio)) {
+    if (!gpio_data)
         return;
-    }
 
+    gpio = gpio_data->gpio;
     info.GetReturnValue().Set(Nan::New(sol_gpio_read(gpio)));
 }

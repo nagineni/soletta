@@ -19,49 +19,22 @@
 #include <nan.h>
 #include "sol-js-gpio.h"
 #include "../common.h"
-#include "handles.h"
 
 using namespace v8;
 
-static sol_gpio_edge sol_edge_from_string(Local<Value> jsString) {
-  sol_gpio_edge edge = SOL_GPIO_EDGE_NONE;
-  if (strcmp((const char *)*(String::Utf8Value(jsString)), "none") == 0)
-    edge = SOL_GPIO_EDGE_NONE;
-  else if (strcmp((const char *)*(String::Utf8Value(jsString)), "rising") == 0)
-    edge = SOL_GPIO_EDGE_RISING;
-  else if (strcmp((const char *)*(String::Utf8Value(jsString)), "falling") == 0)
-    edge = SOL_GPIO_EDGE_FALLING;
-  else if (strcmp((const char *)*(String::Utf8Value(jsString)), "any") == 0)
-    edge = SOL_GPIO_EDGE_BOTH;
-
-  return edge;
-}
-
-static void sol_gpio_read_callback(void *data, struct sol_gpio *gpio, bool value) {
-    Nan::HandleScope scope;
-    Nan::Callback *callback = (Nan::Callback *)data;
-    if (!callback)
-        return;
-
-    Local<Value> arguments[2] = {
-        js_sol_gpio(gpio),
-        Nan::New(value)
-    };
-    callback->Call(2, arguments);
-}
-
-bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *config) {
+bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, 
+    sol_gpio_data *gpio_data, sol_gpio_config *config) {
     SOL_SET_API_VERSION(config->api_version = SOL_GPIO_CONFIG_API_VERSION; )
 
-    VALIDATE_AND_ASSIGN_PTR(config, dir, sol_gpio_direction, IsUint32,
+    VALIDATE_AND_ASSIGN((*config), dir, sol_gpio_direction, IsUint32,
                         "(GPIO direction)", false, jsGPIOConfig,
                         Uint32Value);
 
-    VALIDATE_AND_ASSIGN_PTR(config, drive_mode, sol_gpio_drive, IsUint32,
+    VALIDATE_AND_ASSIGN((*config), drive_mode, sol_gpio_drive, IsUint32,
                         "(GPIO pull-up/pull-down resistor)", false, jsGPIOConfig,
                         Uint32Value);
 
-    VALIDATE_AND_ASSIGN_PTR(config, active_low, bool, IsBoolean,
+    VALIDATE_AND_ASSIGN((*config), active_low, bool, IsBoolean,
                         "(GPIO active_low state)", false, jsGPIOConfig,
                         BooleanValue);
 
@@ -78,7 +51,8 @@ bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *conf
                 .ToLocalChecked();
         VALIDATE_VALUE_TYPE(trigger_mode, IsString, "GPIO in trigger_mode",
             false);
-        config->in.trigger_mode = (sol_gpio_edge)sol_edge_from_string(trigger_mode);
+        config->in.trigger_mode = (sol_gpio_edge)sol_gpio_edge_from_str(
+            (const char *)*(String::Utf8Value(trigger_mode)));
 
         Local<Value> read_cb = Nan::Get(jsGPIOConfig,
             Nan::New("callback").ToLocalChecked()).ToLocalChecked();
@@ -86,8 +60,8 @@ bool c_sol_gpio_config(v8::Local<v8::Object> jsGPIOConfig, sol_gpio_config *conf
         if (read_cb->IsFunction()) {
             Nan::Callback *callback =
                 new Nan::Callback(Local<Function>::Cast(read_cb));
-            config->in.cb = sol_gpio_read_callback;
-            config->in.user_data = callback;
+            gpio_data->callback = callback;
+            config->in.user_data = gpio_data;
         }
     }
 
