@@ -60,6 +60,8 @@ NAN_METHOD(bind_sol_gpio_open) {
 
     pin = info[0]->Uint32Value();
     sol_gpio_data *gpio_data = new sol_gpio_data;
+    gpio_data->callback = NULL;
+
     if (!c_sol_gpio_config(info[1]->ToObject(), gpio_data, &config)) {
         Nan::ThrowError("Unable to extract sol_gpio_config\n");
         return;
@@ -67,11 +69,10 @@ NAN_METHOD(bind_sol_gpio_open) {
 
     Nan::Callback *callback = NULL;
     if (config.dir == SOL_GPIO_DIR_IN)
-        callback = (Nan::Callback *)config.in.user_data;
+        callback = gpio_data->callback;
     gpio = sol_gpio_open(pin, &config);
     if (gpio) {
         gpio_data->gpio = gpio;
-        gpio_data->callback = callback;
         if (callback) {
             bool ret = hijack_ref();
             if (!ret) {
