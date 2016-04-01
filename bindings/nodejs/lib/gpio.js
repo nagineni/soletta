@@ -27,6 +27,7 @@ exports.open = function( init ) {
         var config = null;
         var gpiopin;
         var callback_data = [];
+        var edge = "any";
 
         if ( init.pullup )
             drive_mode = soletta.sol_gpio_drive.SOL_GPIO_DRIVE_PULL_UP;
@@ -35,13 +36,16 @@ exports.open = function( init ) {
         else
             drive_mode = soletta.sol_gpio_drive.SOL_GPIO_DRIVE_NONE;
 
+        if ( init.edge )
+            edge = init.edge;
+
         if ( init.direction == "in" ) {
             config = {
                 dir: soletta.sol_gpio_direction.SOL_GPIO_DIR_IN,
                 active_low: init.activeLow,
                 poll_timeout: init.poll,
                 drive_mode: drive_mode,
-                trigger_mode: init.edge,
+                trigger_mode: edge,
                 callback: function( pin, value ) {
                     callback_data[0].dispatchEvent( "change", {
                         type: "change",

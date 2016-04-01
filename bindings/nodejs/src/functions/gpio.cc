@@ -69,28 +69,26 @@ NAN_METHOD(bind_sol_gpio_open) {
     }
 
     Nan::Callback *callback = gpio_data->callback;
-    if (callback)
+    if (callback) {
+        if (!hijack_ref()) {
+            delete callback;
+            delete gpio_data;
+            Nan::ThrowError("Failed to ref for mainloop");
+            return;
+        }
         config.in.cb = sol_gpio_read_callback;
+    }
 
     gpio = sol_gpio_open(pin, &config);
     if (gpio) {
         gpio_data->gpio = gpio;
-        if (callback) {
-            if (!hijack_ref()) {
-                delete callback;
-                delete gpio_data;
-                Nan::ThrowError("Failed to ref for mainloop");
-                return;
-            }
-        }
-
         info.GetReturnValue().Set(SolGpio::New(gpio_data));
         return;
-    } else if (callback) {
-        delete callback;
+    } else {
+        if (callback)
+            delete callback;
+        delete gpio_data;
     }
-
-    delete gpio_data;
 }
 
 NAN_METHOD(bind_sol_gpio_close) {
