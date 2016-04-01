@@ -93,7 +93,7 @@ NAN_METHOD(bind_sol_gpio_open) {
 
 NAN_METHOD(bind_sol_gpio_close) {
     VALIDATE_ARGUMENT_COUNT(info, 1);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     Local<Object> jsGpio = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_gpio_data *gpio_data = (sol_gpio_data *)SolGpio::Resolve(jsGpio);
     sol_gpio *gpio;
@@ -113,7 +113,7 @@ NAN_METHOD(bind_sol_gpio_close) {
 
 NAN_METHOD(bind_sol_gpio_write) {
     VALIDATE_ARGUMENT_COUNT(info, 2);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 1, IsBoolean);
     bool value;
     Local<Object> jsGpio = Nan::To<Object>(info[0]).ToLocalChecked();
@@ -131,7 +131,7 @@ NAN_METHOD(bind_sol_gpio_write) {
 
 NAN_METHOD(bind_sol_gpio_read) {
     VALIDATE_ARGUMENT_COUNT(info, 1);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     Local<Object> jsGpio = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_gpio_data *gpio_data = (sol_gpio_data *)SolGpio::Resolve(jsGpio);
     sol_gpio *gpio;
