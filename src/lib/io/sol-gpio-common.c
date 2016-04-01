@@ -81,8 +81,6 @@ sol_gpio_open(uint32_t pin, const struct sol_gpio_config *config)
 SOL_API enum sol_gpio_edge
 sol_gpio_edge_from_str(const char *edge)
 {
-    int len = strlen(edge);
-    enum sol_gpio_edge gpio_edge;
     static const struct sol_str_table table[] = {
         SOL_STR_TABLE_ITEM("none", SOL_GPIO_EDGE_NONE),
         SOL_STR_TABLE_ITEM("rising", SOL_GPIO_EDGE_RISING),
@@ -91,11 +89,8 @@ sol_gpio_edge_from_str(const char *edge)
         { }
     };
 
-    if (!sol_str_table_lookup(table, SOL_STR_SLICE_STR(edge, len), &gpio_edge))
-        return SOL_GPIO_EDGE_NONE;
-
-    return gpio_edge;
-
+    return sol_str_table_lookup_fallback(table,
+        sol_str_slice_from_str(edge), SOL_GPIO_EDGE_NONE);
 }
 
 SOL_API const char *
