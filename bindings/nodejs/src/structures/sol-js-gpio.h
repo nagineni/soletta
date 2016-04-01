@@ -27,7 +27,7 @@ struct sol_gpio_data {
     Nan::Callback *callback;
 };
 
-bool c_sol_gpio_config(v8::Local<v8::Object> gpioConfig, sol_gpio_data *data, 
+bool c_sol_gpio_config(v8::Local<v8::Object> gpioConfig, sol_gpio_data *data,
     sol_gpio_config *config);
 
 #endif /* __SOLETTA_JS_GPIO_H__ */
