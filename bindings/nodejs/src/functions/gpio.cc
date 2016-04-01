@@ -73,7 +73,6 @@ NAN_METHOD(bind_sol_gpio_open) {
         if (!hijack_ref()) {
             delete callback;
             delete gpio_data;
-            Nan::ThrowError("Failed to ref for mainloop");
             return;
         }
         config.in.cb = sol_gpio_read_callback;
@@ -88,6 +87,7 @@ NAN_METHOD(bind_sol_gpio_open) {
         if (callback)
             delete callback;
         delete gpio_data;
+        hijack_unref();
     }
 }
 
@@ -107,6 +107,7 @@ NAN_METHOD(bind_sol_gpio_close) {
     if (callback) {
         delete callback;
         delete gpio_data;
+        Nan::SetInternalFieldPointer(jsGpio, 0, 0);
         hijack_unref();
     }
 }
