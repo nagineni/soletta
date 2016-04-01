@@ -28,7 +28,7 @@ struct sol_gpio_data {
 };
 
 bool c_sol_gpio_config(v8::Local<v8::Object> gpioConfig, sol_gpio_data *data, 
-	sol_gpio_config *config);
+    sol_gpio_config *config);
 
 #endif /* __SOLETTA_JS_GPIO_H__ */
 

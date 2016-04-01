@@ -250,7 +250,7 @@ enum sol_gpio_edge sol_gpio_edge_from_str(const char *edge) SOL_ATTR_WARN_UNUSED
  *
  * @return String representation of the sol_gpio_edge
  */
-const char * sol_gpio_edge_to_str(enum sol_gpio_edge edge) SOL_ATTR_WARN_UNUSED_RESULT;
+const char *sol_gpio_edge_to_str(enum sol_gpio_edge edge) SOL_ATTR_WARN_UNUSED_RESULT;
 
 /**
  * @brief Opens a given pin by its board label as general purpose input or output.
