@@ -33,7 +33,7 @@ var sources = [
 
 // List containing the names of the header files in which to search for constants and enums
 var headers = [
-	"sol-platform.h",
+	"sol-platform.h"
 ];
 
 var oneVariable, match;
