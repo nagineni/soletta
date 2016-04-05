@@ -43,7 +43,6 @@ static void sol_gpio_read_callback(void *data, struct sol_gpio *gpio, bool value
         return;
 
     Local<Value> arguments[2] = {
-        SolGpio::New(gpio_data),
         Nan::New(value)
     };
     callback->Call(2, arguments);

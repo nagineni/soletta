@@ -46,7 +46,7 @@ exports.open = function( init ) {
                 poll_timeout: init.poll,
                 drive_mode: drive_mode,
                 trigger_mode: edge,
-                callback: function( pin, value ) {
+                callback: function( value ) {
                     callback_data[0].dispatchEvent( "change", {
                         type: "change",
                         value: value
