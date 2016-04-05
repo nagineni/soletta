@@ -89,6 +89,8 @@ sol_gpio_edge_from_str(const char *edge)
         { }
     };
 
+    SOL_NULL_CHECK(edge, SOL_GPIO_EDGE_NONE);
+
     return sol_str_table_lookup_fallback(table,
         sol_str_slice_from_str(edge), SOL_GPIO_EDGE_NONE);
 }
