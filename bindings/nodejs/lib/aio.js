@@ -46,10 +46,11 @@ var AIOPin = function( pin ) {
 
 _.extend( AIOPin.prototype, {
 	_isAIOPin: true,
+	_pending: null,
 
 	read: function() {
 		return new Promise( _.bind( function( fulfill, reject ) {
-			soletta.sol_aio_get_value( this._pin, function( value ) {
+			this._pending = soletta.sol_aio_get_value( this._pin, function( value ) {
 				fulfill( value );
 			});
 		}, this ) );
@@ -57,9 +58,19 @@ _.extend( AIOPin.prototype, {
 
 	close: function() {
 		return new Promise( _.bind( function( fulfill, reject ) {
-			fulfill( soletta.sol_aio_close( this._pin) );
+			soletta.sol_aio_close( this._pin);
+			this._pending = null;
+			fulfill();
 		}, this ) );
 	},
+
+	abort: function() {
+		return new Promise( _.bind( function( fulfill, reject ) {
+			soletta.sol_aio_pending_cancel( this._pin, _this._pending );
+			this._pending = null;
+			fulfill();
+		}, this ) );
+	}
 });
 
 exports.AIOPin = AIOPin;

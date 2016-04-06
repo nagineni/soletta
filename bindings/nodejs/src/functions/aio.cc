@@ -146,8 +146,8 @@ NAN_METHOD(bind_sol_aio_get_value) {
 NAN_METHOD(bind_sol_aio_pending_cancel)
 {
     VALIDATE_ARGUMENT_COUNT(info, 2);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
-    VALIDATE_ARGUMENT_TYPE(info, 1, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
+    VALIDATE_ARGUMENT_TYPE(info, 1, IsObject);
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
 
