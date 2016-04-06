@@ -36,24 +36,24 @@ public:
 };
 
 NAN_METHOD(bind_sol_aio_open) {
-	VALIDATE_ARGUMENT_COUNT(info, 3);
-	VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsInt32);
-	VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsInt32);
-	VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 2, IsUint32);
+    VALIDATE_ARGUMENT_COUNT(info, 3);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsInt32);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsInt32);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 2, IsUint32);
 
-	int32_t device;
-	int32_t pin;
-	uint32_t precision;
-	sol_aio *aio = NULL;
+    int32_t device;
+    int32_t pin;
+    uint32_t precision;
+    sol_aio *aio = NULL;
 
-	device = info[0]->Int32Value();
-	pin = info[1]->Int32Value();
-	precision = info[2]->Uint32Value();
+    device = info[0]->Int32Value();
+    pin = info[1]->Int32Value();
+    precision = info[2]->Uint32Value();
 
-	aio = sol_aio_open(device, pin, precision);
-	if ( aio ) {
-		info.GetReturnValue().Set(SolAio::New(aio));
-	}
+    aio = sol_aio_open(device, pin, precision);
+    if ( aio ) {
+        info.GetReturnValue().Set(SolAio::New(aio));
+    }
 }
 
 NAN_METHOD(bind_sol_aio_open_by_label) {
@@ -94,12 +94,12 @@ NAN_METHOD(bind_sol_aio_open_raw) {
 }
 
 NAN_METHOD(bind_sol_aio_close) {
-	VALIDATE_ARGUMENT_COUNT(info, 1);
-	VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
+    VALIDATE_ARGUMENT_COUNT(info, 1);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
 
-	sol_aio_close(aio);
+    sol_aio_close(aio);
 }
 
 
@@ -119,8 +119,8 @@ static void sol_aio_read_cb(void *cb_data, struct sol_aio *aio,
 }
 
 NAN_METHOD(bind_sol_aio_get_value) {
-	VALIDATE_ARGUMENT_COUNT(info, 2);
-	VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
+    VALIDATE_ARGUMENT_COUNT(info, 2);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 1, IsFunction);
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
