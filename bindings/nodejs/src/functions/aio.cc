@@ -120,7 +120,7 @@ static void sol_aio_read_cb(void *cb_data, struct sol_aio *aio,
 
 NAN_METHOD(bind_sol_aio_get_value) {
 	VALIDATE_ARGUMENT_COUNT(info, 2);
-	VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+	VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 1, IsFunction);
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
