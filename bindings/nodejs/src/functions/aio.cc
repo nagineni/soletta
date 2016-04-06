@@ -99,10 +99,6 @@ NAN_METHOD(bind_sol_aio_close) {
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
 
- 	if (!c_sol_aio(Local<Array>::Cast(info[0]), &aio)) {
-    	return;
-	}
-
 	sol_aio_close(aio);
 }
 
@@ -144,7 +140,7 @@ NAN_METHOD(bind_sol_aio_get_value) {
         return;
     }
 
-    info.GetReturnValue().Set(js_sol_aio_pending(aio_pending));
+    info.GetReturnValue().Set(SolAio::New(aio_pending));
 }
 
 NAN_METHOD(bind_sol_aio_pending_cancel)
@@ -155,9 +151,8 @@ NAN_METHOD(bind_sol_aio_pending_cancel)
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
 
-    sol_aio_pending *aio_pending = NULL;
-    if (!c_sol_aio_pending(Local<Array>::Cast(info[1]), &aio_pending))
-        return;
+    Local<Object> jsAioPending = Nan::To<Object>(info[1]).ToLocalChecked();
+    sol_aio_pending *aio_pending = (sol_aio_pending *)SolAio::Resolve(jsAioPending);
 
     sol_aio_pending_cancel(aio, aio_pending);
     hijack_unref();
