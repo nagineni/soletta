@@ -100,7 +100,7 @@ NAN_METHOD(bind_sol_aio_close) {
     sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
 
     sol_aio_close(aio);
-    Nan::SetInternalFieldPointer(jsAio, 0, 0)
+    Nan::SetInternalFieldPointer(jsAio, 0, 0);
 }
 
 static void sol_aio_read_cb(void *cb_data, struct sol_aio *aio,
