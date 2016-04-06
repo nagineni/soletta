@@ -52,7 +52,7 @@ NAN_METHOD(bind_sol_aio_open) {
 
 	aio = sol_aio_open(device, pin, precision);
 	if ( aio ) {
-		info.GetReturnValue().Set(SolGpio::New(aio));
+		info.GetReturnValue().Set(SolAio::New(aio));
 	}
 }
 
@@ -68,7 +68,7 @@ NAN_METHOD(bind_sol_aio_open_by_label) {
 
     aio = sol_aio_open_by_label((const char *)*String::Utf8Value(info[0]), precision);
     if ( aio ) {
-        info.GetReturnValue().Set(SolGpio::New(aio));
+        info.GetReturnValue().Set(SolAio::New(aio));
     }
 }
 
@@ -89,7 +89,7 @@ NAN_METHOD(bind_sol_aio_open_raw) {
 
     aio = sol_aio_open_raw(device, pin, precision);
     if ( aio ) {
-        info.GetReturnValue().Set(SolGpio::New(aio));
+        info.GetReturnValue().Set(SolAio::New(aio));
     }
 }
 
@@ -97,7 +97,7 @@ NAN_METHOD(bind_sol_aio_close) {
 	VALIDATE_ARGUMENT_COUNT(info, 1);
 	VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
-    sol_aio *aio = (sol_aio *)SolGpio::Resolve(jsAio);
+    sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
 
  	if (!c_sol_aio(Local<Array>::Cast(info[0]), &aio)) {
     	return;
@@ -127,7 +127,7 @@ NAN_METHOD(bind_sol_aio_get_value) {
 	VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
     VALIDATE_ARGUMENT_TYPE(info, 1, IsFunction);
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
-    sol_aio *aio = (sol_aio *)SolGpio::Resolve(jsAio);
+    sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
 
     Nan::Callback *callback =
         new Nan::Callback(Local<Function>::Cast(info[1]));
@@ -153,7 +153,7 @@ NAN_METHOD(bind_sol_aio_pending_cancel)
     VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
     VALIDATE_ARGUMENT_TYPE(info, 1, IsArray);
     Local<Object> jsAio = Nan::To<Object>(info[0]).ToLocalChecked();
-    sol_aio *aio = (sol_aio *)SolGpio::Resolve(jsAio);
+    sol_aio *aio = (sol_aio *)SolAio::Resolve(jsAio);
 
     sol_aio_pending *aio_pending = NULL;
     if (!c_sol_aio_pending(Local<Array>::Cast(info[1]), &aio_pending))
