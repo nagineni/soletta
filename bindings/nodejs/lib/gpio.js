@@ -21,13 +21,13 @@
 
 exports.open = function( init ) {
     return new Promise( function( fulfill, reject ) {
-        var pin = init.pin;
         var dir = 0;
         var drive_mode = 0;
         var config = null;
         var gpiopin;
         var callback_data = [];
         var edge = "any";
+        var raw = ( typeof init.raw === 'undefined' ) ? false : init.raw;
 
         if ( init.pullup )
             drive_mode = soletta.sol_gpio_drive.SOL_GPIO_DRIVE_PULL_UP;
@@ -62,7 +62,15 @@ exports.open = function( init ) {
             }
         }
 
-        gpiopin = GPIOPin( soletta.sol_gpio_open( pin, config ) );
+        if (typeof init.name === 'string' && init.name !== "") {
+            gpiopin = GPIOPin( soletta.sol_gpio_open( init.name, config ) );
+        } else {
+            if ( raw )
+                gpiopin = GPIOPin( soletta.sol_gpio_open_raw( init.pin, config ) );
+            else
+                gpiopin = GPIOPin( soletta.sol_gpio_open( init.pin, config ) );
+        }
+
         callback_data.push( gpiopin );
         fulfill( gpiopin );
     });

@@ -90,6 +90,89 @@ NAN_METHOD(bind_sol_gpio_open) {
     }
 }
 
+NAN_METHOD(bind_sol_gpio_open_by_label) {
+    VALIDATE_ARGUMENT_COUNT(info, 2);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsString);
+    VALIDATE_ARGUMENT_TYPE(info, 1, IsObject);
+
+    sol_gpio_config config;
+    sol_gpio *gpio = NULL;
+
+    sol_gpio_data *gpio_data = new sol_gpio_data;
+    gpio_data->callback = NULL;
+
+    if (!c_sol_gpio_config(info[1]->ToObject(), gpio_data, &config)) {
+        delete gpio_data;
+        Nan::ThrowError("Unable to extract sol_gpio_config\n");
+        return;
+    }
+
+    Nan::Callback *callback = gpio_data->callback;
+    if (callback) {
+        if (!hijack_ref()) {
+            delete callback;
+            delete gpio_data;
+            return;
+        }
+        config.in.cb = sol_gpio_read_callback;
+    }
+
+    gpio = sol_gpio_open_by_label((const char *)*String::Utf8Value(info[0]),
+        &config);
+    if (gpio) {
+        gpio_data->gpio = gpio;
+        info.GetReturnValue().Set(SolGpio::New(gpio_data));
+        return;
+    } else {
+        if (callback)
+            delete callback;
+        delete gpio_data;
+        hijack_unref();
+    }
+}
+
+NAN_METHOD(bind_sol_gpio_open_raw) {
+    VALIDATE_ARGUMENT_COUNT(info, 3);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsUint32);
+    VALIDATE_ARGUMENT_TYPE(info, 2, IsObject);
+
+    uint32_t pin;
+    sol_gpio_config config;
+    sol_gpio *gpio = NULL;
+
+    pin = info[0]->Uint32Value();
+    sol_gpio_data *gpio_data = new sol_gpio_data;
+    gpio_data->callback = NULL;
+
+    if (!c_sol_gpio_config(info[1]->ToObject(), gpio_data, &config)) {
+        delete gpio_data;
+        Nan::ThrowError("Unable to extract sol_gpio_config\n");
+        return;
+    }
+
+    Nan::Callback *callback = gpio_data->callback;
+    if (callback) {
+        if (!hijack_ref()) {
+            delete callback;
+            delete gpio_data;
+            return;
+        }
+        config.in.cb = sol_gpio_read_callback;
+    }
+
+    gpio = sol_gpio_open_raw(pin, &config);
+    if (gpio) {
+        gpio_data->gpio = gpio;
+        info.GetReturnValue().Set(SolGpio::New(gpio_data));
+        return;
+    } else {
+        if (callback)
+            delete callback;
+        delete gpio_data;
+        hijack_unref();
+    }
+}
+
 NAN_METHOD(bind_sol_gpio_close) {
     VALIDATE_ARGUMENT_COUNT(info, 1);
     VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
