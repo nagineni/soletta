@@ -89,14 +89,22 @@ _.extend( GPIOPin.prototype, {
 
     read: function() {
         return new Promise( _.bind( function( fulfill, reject ) {
-
-            fulfill( soletta.sol_gpio_read( this._pin ) );
+            var returnStatus = soletta.sol_gpio_read( this._pin );
+            if ( returnStatus < 0)
+                reject( new Error( "GPIO read failed" ) );
+            else
+                fulfill( returnStatus );
         }, this ) );
     },
 
     write: function( value ) {
         return new Promise( _.bind( function( fulfill, reject ) {
-            fulfill( soletta.sol_gpio_write( this._pin, value ) );
+
+            var returnStatus = soletta.sol_gpio_write( this._pin, value );
+            if ( returnStatus )
+                fulfill();
+            else
+                reject( new Error( "GPIO transmission failed" ) );
         }, this ) );
     },
 
