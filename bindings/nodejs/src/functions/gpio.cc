@@ -42,10 +42,10 @@ static void sol_gpio_read_callback(void *data, struct sol_gpio *gpio, bool value
     if (!callback)
         return;
 
-    Local<Value> arguments[2] = {
+    Local<Value> arguments[1] = {
         Nan::New(value)
     };
-    callback->Call(2, arguments);
+    callback->Call(1, arguments);
 }
 
 NAN_METHOD(bind_sol_gpio_open) {
