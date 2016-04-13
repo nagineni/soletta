@@ -46,7 +46,7 @@ NAN_METHOD(bind_sol_i2c_open)
     i2c = sol_i2c_open(info[0]->Uint32Value(), speed);
 
     if (i2c) {
-        info.GetReturnValue().Set(SolI2c::new(i2c));
+        info.GetReturnValue().Set(SolI2c::New(i2c));
     }
 }
 
@@ -61,7 +61,7 @@ NAN_METHOD(bind_sol_i2c_open_raw)
     i2c = sol_i2c_open_raw(info[0]->Uint32Value(), speed);
 
     if (i2c) {
-        info.GetReturnValue().Set(SolI2c::new(i2c));
+        info.GetReturnValue().Set(SolI2c::New(i2c));
     }
 }
 
