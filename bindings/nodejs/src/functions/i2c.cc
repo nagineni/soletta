@@ -29,7 +29,7 @@
 
 using namespace v8;
 
-class SolI2c : public JSHandle<SolI2c {
+class SolI2c : public JSHandle<SolI2c> {
 public:
     static const char *jsClassName() { return "SolI2c"; }
 };
@@ -46,7 +46,7 @@ NAN_METHOD(bind_sol_i2c_open)
     i2c = sol_i2c_open(info[0]->Uint32Value(), speed);
 
     if (i2c) {
-        info.GetReturnValue().Set(SolI2c:new(i2c));
+        info.GetReturnValue().Set(SolI2c::new(i2c));
     }
 }
 
@@ -61,7 +61,7 @@ NAN_METHOD(bind_sol_i2c_open_raw)
     i2c = sol_i2c_open_raw(info[0]->Uint32Value(), speed);
 
     if (i2c) {
-        info.GetReturnValue().Set(SolI2c:new(i2c));
+        info.GetReturnValue().Set(SolI2c::new(i2c));
     }
 }
 
@@ -271,7 +271,7 @@ NAN_METHOD(bind_sol_i2c_write_register)
     if (!i2c_pending) {
         delete callback;
         return;
-    } else if (!hijack_ref())
+    } else if (!hijack_ref()) {
         delete callback;
         sol_i2c_pending_cancel(i2c, i2c_pending);
         return;
