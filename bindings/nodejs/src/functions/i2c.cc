@@ -25,9 +25,14 @@
 #include "../common.h"
 #include "../data.h"
 #include "../hijack.h"
-#include "../structures/handles.h"
+#include "../structures/js-handle.h"
 
 using namespace v8;
+
+class SolI2c : public JSHandle<SolI2c {
+public:
+    static const char *jsClassName() { return "SolI2c"; }
+};
 
 NAN_METHOD(bind_sol_i2c_open)
 {
@@ -41,7 +46,7 @@ NAN_METHOD(bind_sol_i2c_open)
     i2c = sol_i2c_open(info[0]->Uint32Value(), speed);
 
     if (i2c) {
-        info.GetReturnValue().Set(js_sol_i2c(i2c));
+        info.GetReturnValue().Set(SolI2c:new(i2c));
     }
 }
 
@@ -56,20 +61,18 @@ NAN_METHOD(bind_sol_i2c_open_raw)
     i2c = sol_i2c_open_raw(info[0]->Uint32Value(), speed);
 
     if (i2c) {
-        info.GetReturnValue().Set(js_sol_i2c(i2c));
+        info.GetReturnValue().Set(SolI2c:new(i2c));
     }
 }
 
 NAN_METHOD(bind_sol_i2c_set_slave_address)
 {
     VALIDATE_ARGUMENT_COUNT(info, 2);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
 
-    sol_i2c *i2c = NULL;
-
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     bool returnValue = sol_i2c_set_slave_address(i2c, info[1]->Uint32Value());
     info.GetReturnValue().Set(Nan::New(returnValue));
@@ -78,39 +81,34 @@ NAN_METHOD(bind_sol_i2c_set_slave_address)
 NAN_METHOD(bind_sol_i2c_close)
 {
     VALIDATE_ARGUMENT_COUNT(info, 1);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
 
-    sol_i2c *i2c = NULL;
-
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     sol_i2c_close(i2c);
+    Nan::SetInternalFieldPointer(jsI2c, 0, 0);
 }
 
 NAN_METHOD(bind_sol_i2c_close_raw)
 {
     VALIDATE_ARGUMENT_COUNT(info, 1);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
 
-    sol_i2c *i2c = NULL;
-
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     sol_i2c_close_raw(i2c);
+    Nan::SetInternalFieldPointer(jsI2c, 0, 0);
 }
 
 NAN_METHOD(bind_sol_i2c_busy)
 {
     VALIDATE_ARGUMENT_COUNT(info, 1);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
 
-    sol_i2c *i2c = NULL;
-
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
-
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
     bool returnValue = sol_i2c_busy(i2c);
 
     info.GetReturnValue().Set(Nan::New(returnValue));
@@ -119,19 +117,17 @@ NAN_METHOD(bind_sol_i2c_busy)
 NAN_METHOD(bind_sol_i2c_pending_cancel)
 {
     VALIDATE_ARGUMENT_COUNT(info, 2);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
-    VALIDATE_ARGUMENT_TYPE(info, 1, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
+    VALIDATE_ARGUMENT_TYPE(info, 1, IsObject);
 
-    sol_i2c *i2c = NULL;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
-
-    sol_i2c_pending *i2c_pending = NULL;
-    if (!c_sol_i2c_pending(Local<Array>::Cast(info[1]), &i2c_pending))
-        return;
+    Local<Object> jsI2cPending = Nan::To<Object>(info[1]).ToLocalChecked();
+    sol_i2c_pending *i2c_pending = (sol_i2c_pending *)SolI2c::Resolve(jsI2cPending);
 
     sol_i2c_pending_cancel(i2c, i2c_pending);
+    Nan::SetInternalFieldPointer(jsI2cPending, 0, 0);
     hijack_unref();
 }
 
@@ -150,13 +146,12 @@ static void sol_i2c_write_cb(void *cb_data, struct sol_i2c *i2c,
         buffer = Nan::Null();
     }
 
-    Local<Value> arguments[3] = {
-        js_sol_i2c(i2c),
+    Local<Value> arguments[2] = {
         buffer,
         Nan::New((int)status)
     };
 
-    callback->Call(3, arguments);
+    callback->Call(2, arguments);
     delete callback;
     free(data);
     hijack_unref();
@@ -165,16 +160,15 @@ static void sol_i2c_write_cb(void *cb_data, struct sol_i2c *i2c,
 NAN_METHOD(bind_sol_i2c_write)
 {
     VALIDATE_ARGUMENT_COUNT(info, 3);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 1, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 2, IsFunction);
 
     uint8_t *outputBuffer = (uint8_t *) 0;
-    sol_i2c *i2c = NULL;
     size_t count = 0;
 
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     if (!node::Buffer::HasInstance(info[1])) {
         Nan::ThrowTypeError("Argument 1 must be a node Buffer");
@@ -200,11 +194,13 @@ NAN_METHOD(bind_sol_i2c_write)
     if (!i2c_pending) {
         delete callback;
         return;
-    } else {
-        hijack_ref();
+    } else if (!hijack_ref()) {
+        delete callback;
+        sol_i2c_pending_cancel(i2c, i2c_pending);
+        return;
     }
 
-    info.GetReturnValue().Set(js_sol_i2c_pending(i2c_pending));
+    info.GetReturnValue().Set(SolI2c::New(i2c_pending));
 }
 
 static void sol_i2c_write_reg_cb(void *cb_data, struct sol_i2c *i2c,
@@ -222,14 +218,13 @@ static void sol_i2c_write_reg_cb(void *cb_data, struct sol_i2c *i2c,
         buffer = Nan::Null();
     }
 
-    Local<Value> arguments[4] = {
-        js_sol_i2c(i2c),
+    Local<Value> arguments[3] = {
         Nan::New(reg),
         buffer,
         Nan::New((int)status)
     };
 
-    callback->Call(4, arguments);
+    callback->Call(3, arguments);
 
     delete callback;
     free(data);
@@ -239,17 +234,16 @@ static void sol_i2c_write_reg_cb(void *cb_data, struct sol_i2c *i2c,
 NAN_METHOD(bind_sol_i2c_write_register)
 {
     VALIDATE_ARGUMENT_COUNT(info, 4);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 2, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 3, IsFunction);
 
     uint8_t *outputBuffer = (uint8_t *) 0;
-    sol_i2c *i2c = NULL;
     size_t count;
 
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     uint8_t reg = info[1]->Uint32Value();
 
@@ -277,11 +271,13 @@ NAN_METHOD(bind_sol_i2c_write_register)
     if (!i2c_pending) {
         delete callback;
         return;
-    } else {
-        hijack_ref();
+    } else if (!hijack_ref())
+        delete callback;
+        sol_i2c_pending_cancel(i2c, i2c_pending);
+        return;
     }
 
-    info.GetReturnValue().Set(js_sol_i2c_pending(i2c_pending));
+    info.GetReturnValue().Set(SolI2c::New(i2c_pending));
 }
 
 static void sol_i2c_write_quick_cb(void *cb_data, struct sol_i2c *i2c,
@@ -290,12 +286,11 @@ static void sol_i2c_write_quick_cb(void *cb_data, struct sol_i2c *i2c,
     Nan::HandleScope scope;
     Nan::Callback *callback = (Nan::Callback *)cb_data;
 
-    Local<Value> arguments[2] = {
-        js_sol_i2c(i2c),
+    Local<Value> arguments[1] = {
         Nan::New((int)status)
     };
 
-    callback->Call(2, arguments);
+    callback->Call(1, arguments);
     delete callback;
     hijack_unref();
 }
@@ -303,13 +298,12 @@ static void sol_i2c_write_quick_cb(void *cb_data, struct sol_i2c *i2c,
 NAN_METHOD(bind_sol_i2c_write_quick)
 {
     VALIDATE_ARGUMENT_COUNT(info, 3);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE(info, 1, IsBoolean);
     VALIDATE_ARGUMENT_TYPE(info, 2, IsFunction);
 
-    sol_i2c *i2c = NULL;
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     bool rw = info[1]->BooleanValue();
     Nan::Callback *callback =
@@ -321,11 +315,13 @@ NAN_METHOD(bind_sol_i2c_write_quick)
     if (!i2c_pending) {
         delete callback;
         return;
-    } else {
-        hijack_ref();
+    } else if (!hijack_ref()) {
+        delete callback;
+        sol_i2c_pending_cancel(i2c, i2c_pending);
+        return;
     }
 
-    info.GetReturnValue().Set(js_sol_i2c_pending(i2c_pending));
+    info.GetReturnValue().Set(SolI2c::New(i2c_pending));
 }
 
 static void sol_i2c_read_cb(void *cb_data, struct sol_i2c *i2c, uint8_t *data,
@@ -343,13 +339,12 @@ static void sol_i2c_read_cb(void *cb_data, struct sol_i2c *i2c, uint8_t *data,
         buffer = Nan::Null();
     }
 
-    Local<Value> arguments[3] = {
-        js_sol_i2c(i2c),
+    Local<Value> arguments[2] = {
         buffer,
         Nan::New((int)status)
     };
 
-    callback->Call(3, arguments);
+    callback->Call(2, arguments);
     delete callback;
     free(data);
     hijack_unref();
@@ -358,15 +353,13 @@ static void sol_i2c_read_cb(void *cb_data, struct sol_i2c *i2c, uint8_t *data,
 NAN_METHOD(bind_sol_i2c_read)
 {
     VALIDATE_ARGUMENT_COUNT(info, 3);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
     VALIDATE_ARGUMENT_TYPE(info, 2, IsFunction);
 
     uint8_t *outputBuffer = (uint8_t *) 0;
-    sol_i2c *i2c = NULL;
-
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     size_t count = info[1]->Uint32Value();
     outputBuffer = (uint8_t *) malloc(count * sizeof(uint8_t));
@@ -385,11 +378,13 @@ NAN_METHOD(bind_sol_i2c_read)
     if (!i2c_pending) {
         delete callback;
         return;
-    } else {
-        hijack_ref();
+    } else if (!hijack_ref()) {
+        delete callback;
+        sol_i2c_pending_cancel(i2c, i2c_pending);
+        return;
     }
 
-    info.GetReturnValue().Set(js_sol_i2c_pending(i2c_pending));
+    info.GetReturnValue().Set(SolI2c::New(i2c_pending));
 }
 
 static void sol_i2c_read_reg_cb(void *cb_data, struct sol_i2c *i2c,
@@ -407,14 +402,13 @@ static void sol_i2c_read_reg_cb(void *cb_data, struct sol_i2c *i2c,
         buffer = Nan::Null();
     }
 
-    Local<Value> arguments[4] = {
-        js_sol_i2c(i2c),
+    Local<Value> arguments[3] = {
         Nan::New(reg),
         buffer,
         Nan::New((int)status)
     };
 
-    callback->Call(4, arguments);
+    callback->Call(3, arguments);
     delete callback;
     free(data);
     hijack_unref();
@@ -423,16 +417,14 @@ static void sol_i2c_read_reg_cb(void *cb_data, struct sol_i2c *i2c,
 NAN_METHOD(bind_sol_i2c_read_register)
 {
     VALIDATE_ARGUMENT_COUNT(info, 4);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 2, IsUint32);
     VALIDATE_ARGUMENT_TYPE(info, 3, IsFunction);
 
     uint8_t *outputBuffer = (uint8_t *) 0;
-    sol_i2c *i2c = NULL;
-
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     uint8_t reg = info[1]->Uint32Value();
     size_t count = info[2]->Uint32Value();
@@ -453,27 +445,27 @@ NAN_METHOD(bind_sol_i2c_read_register)
     if (!i2c_pending) {
         delete callback;
         return;
-    } else {
-        hijack_ref();
+    } else if (!hijack_ref()) {
+        delete callback;
+        sol_i2c_pending_cancel(i2c, i2c_pending);
+        return;
     }
 
-    info.GetReturnValue().Set(js_sol_i2c_pending(i2c_pending));
+    info.GetReturnValue().Set(SolI2c::New(i2c_pending));
 }
 
 NAN_METHOD(bind_sol_i2c_read_register_multiple)
 {
     VALIDATE_ARGUMENT_COUNT(info, 5);
-    VALIDATE_ARGUMENT_TYPE(info, 0, IsArray);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsUint32);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 2, IsUint32);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 3, IsUint32);
     VALIDATE_ARGUMENT_TYPE(info, 4, IsFunction);
 
     uint8_t *outputBuffer = (uint8_t *) 0;
-    sol_i2c *i2c = NULL;
-
-    if (!c_sol_i2c(Local<Array>::Cast(info[0]), &i2c))
-        return;
+    Local<Object> jsI2c = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_i2c *i2c = (sol_i2c *)SolI2c::Resolve(jsI2c);
 
     uint8_t reg = info[1]->Uint32Value();
     size_t count = info[2]->Uint32Value();
@@ -489,15 +481,41 @@ NAN_METHOD(bind_sol_i2c_read_register_multiple)
             new Nan::Callback(Local<Function>::Cast(info[4]));
 
     sol_i2c_pending *i2c_pending =
-            sol_i2c_read_register_multiple(i2c, reg, outputBuffer, count, times,
+            sol_i2c_read_register_multiple(i2c, reg, outputBuffer,
+                                           count, times,
                                            sol_i2c_read_reg_cb, callback);
 
     if (!i2c_pending) {
         delete callback;
         return;
-    } else {
-        hijack_ref();
+    } else if (!hijack_ref()) {
+        delete callback;
+        sol_i2c_pending_cancel(i2c, i2c_pending);
+        return;
     }
 
-    info.GetReturnValue().Set(js_sol_i2c_pending(i2c_pending));
+    info.GetReturnValue().Set(SolI2c::New(i2c_pending));
+}
+
+NAN_METHOD(bind_sol_i2c_speed_from_str) {
+    VALIDATE_ARGUMENT_COUNT(info, 1);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsString);
+
+    sol_i2c_speed speed = sol_i2c_speed_from_str(
+        (const char *)*String::Utf8Value(info[0]));
+    info.GetReturnValue().Set(Nan::New(speed));
+}
+
+NAN_METHOD(bind_sol_i2c_speed_to_str) {
+    VALIDATE_ARGUMENT_COUNT(info, 1);
+    VALIDATE_ARGUMENT_TYPE(info, 0, IsInt32);
+
+    const char *idString = sol_i2c_speed_to_str(
+        (sol_i2c_speed)info[0]->Int32Value());
+
+    if (idString) {
+        info.GetReturnValue().Set(Nan::New(idString).ToLocalChecked());
+    } else {
+        info.GetReturnValue().Set(Nan::Null());
+    }
 }
