@@ -27,6 +27,7 @@ SOL_LOG_INTERNAL_DECLARE_STATIC(_log_domain, "i2c");
 #include "sol-pin-mux.h"
 #endif
 #include "sol-str-table.h"
+#include "sol-util.h"
 #include "sol-vector.h"
 
 struct sol_i2c_shared {
