@@ -139,11 +139,10 @@ static void sol_i2c_write_cb(void *cb_data, struct sol_i2c *i2c,
     Local<Value> buffer;
 
     if (status >= 0) {
-        Local <Object> bufObj;
-        bufObj = Nan::NewBuffer((char *)data, status).ToLocalChecked();
-        buffer = bufObj;
+        buffer = Nan::NewBuffer((char *)data, status).ToLocalChecked();
     } else {
         buffer = Nan::Null();
+        free(data);
     }
 
     Local<Value> arguments[2] = {
@@ -153,7 +152,6 @@ static void sol_i2c_write_cb(void *cb_data, struct sol_i2c *i2c,
 
     callback->Call(2, arguments);
     delete callback;
-    free(data);
     hijack_unref();
 }
 
@@ -211,11 +209,10 @@ static void sol_i2c_write_reg_cb(void *cb_data, struct sol_i2c *i2c,
     Local<Value> buffer;
 
     if (status >= 0) {
-        Local <Object> bufObj;
-        bufObj = Nan::NewBuffer((char *)data, status).ToLocalChecked();
-        buffer = bufObj;
+        buffer = Nan::NewBuffer((char *)data, status).ToLocalChecked();
     } else {
         buffer = Nan::Null();
+        free(data);
     }
 
     Local<Value> arguments[3] = {
@@ -227,7 +224,6 @@ static void sol_i2c_write_reg_cb(void *cb_data, struct sol_i2c *i2c,
     callback->Call(3, arguments);
 
     delete callback;
-    free(data);
     hijack_unref();
 }
 
@@ -332,11 +328,10 @@ static void sol_i2c_read_cb(void *cb_data, struct sol_i2c *i2c, uint8_t *data,
     Local<Value> buffer;
 
     if (status >= 0) {
-        Local <Object> bufObj;
-        bufObj = Nan::NewBuffer((char *)data, status).ToLocalChecked();
-        buffer = bufObj;
+        buffer = Nan::NewBuffer((char *)data, status).ToLocalChecked();
     } else {
         buffer = Nan::Null();
+        free(data);
     }
 
     Local<Value> arguments[2] = {
@@ -346,7 +341,6 @@ static void sol_i2c_read_cb(void *cb_data, struct sol_i2c *i2c, uint8_t *data,
 
     callback->Call(2, arguments);
     delete callback;
-    free(data);
     hijack_unref();
 }
 
@@ -395,10 +389,9 @@ static void sol_i2c_read_reg_cb(void *cb_data, struct sol_i2c *i2c,
     Local<Value> buffer;
 
     if (status >= 0) {
-        Local <Object> bufObj;
-        bufObj = Nan::NewBuffer((char *)data, status).ToLocalChecked();
-        buffer = bufObj;
+        buffer = Nan::NewBuffer((char *)data, status).ToLocalChecked();
     } else {
+        free(data);
         buffer = Nan::Null();
     }
 
@@ -410,7 +403,6 @@ static void sol_i2c_read_reg_cb(void *cb_data, struct sol_i2c *i2c,
 
     callback->Call(3, arguments);
     delete callback;
-    free(data);
     hijack_unref();
 }
 

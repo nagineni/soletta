@@ -17,124 +17,122 @@
  */
 
 var soletta = require( 'bindings' )( 'soletta' ),
-	_ = require( 'lodash' );
+    _ = require( 'lodash' );
 
 exports.open = function( init ) {
-	return new Promise( function( fulfill, reject ) {
-		var bus = init.bus;
-		var spd = soletta.sol_i2c_speed_from_str(init.speed);
-		var i2cbus = null;
+    return new Promise( function( fulfill, reject ) {
+        var bus = init.bus;
+        var spd = soletta.sol_i2c_speed_from_str(init.speed);
+        var i2cbus = null;
 
-		if (init.raw) {
-			i2cbus = I2CBus( soletta.sol_i2c_open_raw( bus, spd ) );
-		} else {
-			i2cbus = I2CBus( soletta.sol_i2c_open( bus, spd ) );
-		}
+        if (init.raw) {
+            i2cbus = I2CBus( soletta.sol_i2c_open_raw( bus, spd ) );
+        } else {
+            i2cbus = I2CBus( soletta.sol_i2c_open( bus, spd ) );
+        }
 
-		//copy the properties
-		_.extend(i2cbus, init);
+        //copy the properties
+        _.extend(i2cbus, init);
 
-		fulfill( i2cbus );
-	});
+        fulfill( i2cbus );
+    });
 
 }
 
 var I2CBus = function( i2cbus ) {
-	if ( !this._isI2CBus )
-		return new I2CBus ( i2cbus );
-	this._i2cbus = i2cbus;
+    if ( !this._isI2CBus )
+        return new I2CBus ( i2cbus );
+    this._i2cbus = i2cbus;
 }
 
 _.extend( I2CBus.prototype, {
-	_isI2CBus: true,
-	_pending: null,
-	busy: {
-		get: function() {
-			return soletta.sol_i2c_busy( this._i2cbus );
-		}
-	},
+    _isI2CBus: true,
+    _pending: null,
+    busy: {
+        get: function() {
+            return soletta.sol_i2c_busy( this._i2cbus );
+        }
+    },
 
-	read: function( device, size, register, repetitions ) {
-		return new Promise( _.bind( function( fulfill, reject ) {
-			if (!repetitions)
-				repetitions = 1;
+    read: function( device, size, register, repetitions ) {
+        return new Promise( _.bind( function( fulfill, reject ) {
+            if (!repetitions)
+                repetitions = 1;
 
-			soletta.sol_i2c_set_slave_address( this._i2cbus, device );
-			if (register == null) {
-				this._pending = soletta.sol_i2c_read( this._i2cbus,
-					register, size, function( data, status ) {
-					this._pending = null;
-					fulfill( data.toString() );
-				});
-			} else if (repetitions > 1) {
-				this._pending = soletta.sol_i2c_read_register_multiple(
-					this._i2cbus, register, size, repetitions,
-					function( register, data, status ) {
-					this._pending = null;
-					fulfill( data.toString() );
-				});
-			} else {
-				this._pending = soletta.sol_i2c_read_register(
-					this._i2cbus, register, size,
-					function( register, data, status ) {
-					this._pending = null;
-					fulfill( data.toString() );
-				});
-			}
-		}, this ) );
-	},
+            soletta.sol_i2c_set_slave_address( this._i2cbus, device );
+            if (register == null) {
+                this._pending = soletta.sol_i2c_read( this._i2cbus,
+                    register, size, function( data, status ) {
+                    this._pending = null;
+                    fulfill( data );
+                });
+            } else if (repetitions > 1) {
+                this._pending = soletta.sol_i2c_read_register_multiple(
+                    this._i2cbus, register, size, repetitions,
+                    function( register, data, status ) {
+                    this._pending = null;
+                    fulfill( data );
+                });
+            } else {
+                this._pending = soletta.sol_i2c_read_register(
+                    this._i2cbus, register, size,
+                    function( register, data, status ) {
+                    this._pending = null;
+                    fulfill( data );
+                });
+            }
+        }, this ) );
+    },
 
-	write: function( device, data, register ) {
-		return new Promise( _.bind( function( fulfill, reject ) {
-			soletta.sol_i2c_set_slave_address( this._i2cbus, device );
-			var buf;
+    write: function( device, data, register ) {
+        return new Promise( _.bind( function( fulfill, reject ) {
+            soletta.sol_i2c_set_slave_address( this._i2cbus, device );
+            var buf;
 
-			buf = new Buffer(data);
-			if (!register) {
-				this._pending = soletta.sol_i2c_write( this._i2cbus,
-					buf, function( data, status ) {
-					this._pending = null;
-					fulfill();
-				} );
-			} else {
-				this._pending = soletta.sol_i2c_write_register(
-					this._i2cbus, register, buf,
-					function( register, data, status ) {
-					this._pending = null;
-					fulfill();
-				} );
-			}
-		}, this ) );
-	},
+            if (Buffer.isBuffer( data ))
+                buf = data;
+            else
+                buf = new Buffer(data);
 
-	writeBit: function( device, data ) {
-		return new Promise( _.bind( function( fulfill, reject ) {
-			soletta.sol_i2c_set_slave_address( this._i2cbus, device );
-			this._pending = soletta.sol_i2c_write_quick(
-				this._i2cbus, data, function( status ) {
-				this._pending = null;
-				fulfill();
-			} );
-		}, this ) );
-	},
+            if (!register) {
+                this._pending = soletta.sol_i2c_write( this._i2cbus,
+                    buf, function( data, status ) {
+                    this._pending = null;
+                    fulfill();
+                } );
+            } else {
+                this._pending = soletta.sol_i2c_write_register(
+                    this._i2cbus, register, buf,
+                    function( register, data, status ) {
+                    this._pending = null;
+                    fulfill();
+                } );
+            }
+        }, this ) );
+    },
 
-	close: function() {
-		return new Promise( _.bind( function( fulfill, reject ) {
-			if (this.raw)
-				soletta.sol_i2c_close_raw( this._i2cbus);
-			else
-				soletta.sol_i2c_close( this._i2cbus);
-			fulfill();
-		}, this ) );
-	},
+    writeBit: function( device, data ) {
+        return new Promise( _.bind( function( fulfill, reject ) {
+            soletta.sol_i2c_set_slave_address( this._i2cbus, device );
+            this._pending = soletta.sol_i2c_write_quick(
+                this._i2cbus, data, function( status ) {
+                this._pending = null;
+                fulfill();
+            } );
+        }, this ) );
+    },
 
-	abort: function() {
-		return new Promise( _.bind( function( fulfill, reject ) {
-			soletta.sol_i2c_pending_cancel( this._i2cbus, this._pending );
-			this._pending = null;
-			fulfill();
-		}, this ) );
-	}
+    close: function() {
+        if (this.raw)
+            soletta.sol_i2c_close_raw( this._i2cbus);
+        else
+            soletta.sol_i2c_close( this._i2cbus);
+    },
+
+    abort: function() {
+        soletta.sol_i2c_pending_cancel( this._i2cbus, this._pending );
+        this._pending = null;
+    }
 });
 
 exports.I2CBus = I2CBus;
