@@ -38,15 +38,24 @@ bool c_sol_uart_config(v8::Local<v8::Object> jsUARTConfig,
     VALIDATE_AND_ASSIGN((*config), stop_bits, sol_uart_stop_bits, IsInt32,
         "(Amount of stop bits)", false, jsUARTConfig, Int32Value);
 
-    Local<Value> read_cb = Nan::Get(jsUARTConfig,
-        Nan::New("callback").ToLocalChecked()).ToLocalChecked();
-    if (read_cb->IsFunction()) {
+    Local<Value> rx_callback = Nan::Get(jsUARTConfig,
+        Nan::New("rx_callback").ToLocalChecked()).ToLocalChecked();
+    if (rx_callback->IsFunction()) {
         Nan::Callback *rx_cb =
-            new Nan::Callback(Local<Function>::Cast(read_cb));
+            new Nan::Callback(Local<Function>::Cast(rx_callback));
 
         uart_data->rx_cb = rx_cb;
-        config->rx_cb_user_data = uart_data;
     }
+
+    Local<Value> tx_callback = Nan::Get(jsUARTConfig,
+        Nan::New("tx_callback").ToLocalChecked()).ToLocalChecked();
+    if (tx_callback->IsFunction()) {
+        Nan::Callback *tx_cb =
+            new Nan::Callback(Local<Function>::Cast(tx_callback));
+
+        uart_data->tx_cb = tx_cb;
+    }
+    config->user_data = uart_data;
 
     VALIDATE_AND_ASSIGN((*config), flow_control, bool, IsBoolean,
         "(Enable software flow control)", false, jsUARTConfig,

@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 
-#include <sol-uart.h>
-#include <node.h>
 #include <nan.h>
+#include <node.h>
+#include <sol-buffer.h>
+#include <sol-str-slice.h>
+#include <sol-uart.h>
 
 #include "../common.h"
 #include "../hijack.h"
@@ -32,19 +34,45 @@ public:
     static const char *jsClassName() { return "SolUART"; }
 };
 
-static void sol_uart_read_callback(void *user_data, struct sol_uart *uart,
-    unsigned char byte_read) {
+static void sol_uart_read_callback(void *user_data, struct sol_uart *uart) {
     Nan::HandleScope scope;
     sol_uart_data *uart_data = (sol_uart_data *)user_data;
+    if (!uart_data)
+        return;
+
     Nan::Callback *callback = uart_data->rx_cb;
     if (!callback)
         return;
+    callback->Call(0, NULL);
+}
 
-    Local<Value> arguments[1] = {
-        Nan::New(byte_read)
+static void sol_uart_write_callback(void *data, struct sol_uart *uart,
+    struct sol_blob *blob, int status) {
+    Nan::HandleScope scope;
+    Local<Value> buffer;
+    sol_uart_data *uart_data = (sol_uart_data *)data;
+    Nan::Callback *callback = uart_data->tx_cb;
+    if (!callback)
+        return;
+
+    if (status < 0) {
+        buffer = Nan::Null();
+    } else {
+        struct sol_str_slice slice;
+        slice = sol_str_slice_from_blob(blob);
+        char *tx = sol_str_slice_to_string(slice);
+        if (tx) {
+            buffer = Nan::NewBuffer(tx, slice.len).ToLocalChecked();
+        } else {
+            buffer = Nan::Null();
+        }
+    }
+
+    Local<Value> arguments[2] = {
+        buffer,
+        Nan::New(status)
     };
-
-    callback->Call(1, arguments);
+    callback->Call(2, arguments);
 }
 
 NAN_METHOD(bind_sol_uart_open) {
@@ -66,13 +94,17 @@ NAN_METHOD(bind_sol_uart_open) {
         return;
     }
 
-    Nan::Callback *readCallback = uart_data->rx_cb;
+    Nan::Callback *rx_callback = uart_data->rx_cb;
+    Nan::Callback *tx_callback = uart_data->tx_cb;
     config.rx_cb = sol_uart_read_callback;
+    config.tx_cb = sol_uart_write_callback;
 
     uart = sol_uart_open((const char *)*String::Utf8Value(info[0]), &config);
     if (!uart) {
-        if (readCallback)
-            delete readCallback;
+        if (rx_callback)
+            delete rx_callback;
+        if (tx_callback)
+            delete tx_callback;
         delete uart_data;
         hijack_unref();
         return;
@@ -91,47 +123,54 @@ NAN_METHOD(bind_sol_uart_close) {
         return;
 
     sol_uart *uart = uart_data->uart;
-    Nan::Callback *callback = uart_data->rx_cb;
+    Nan::Callback *rx_callback = uart_data->rx_cb;
+    Nan::Callback *tx_callback = uart_data->tx_cb;
     sol_uart_close(uart);
-    if (callback) {
-        delete callback;
-        delete uart_data;
-        Nan::SetInternalFieldPointer(jsUART, 0, 0);
-        hijack_unref();
-    }
+
+    if (rx_callback)
+        delete rx_callback;
+
+    if (tx_callback)
+        delete tx_callback;
+
+     hijack_unref();
+     delete uart_data;
+     Nan::SetInternalFieldPointer(jsUART, 0, 0);
 }
 
-static void sol_uart_write_callback(void *data, struct sol_uart *uart,
-    unsigned char *tx, int status) {
-    Nan::HandleScope scope;
-    Local<Value> buffer;
-    sol_uart_data *uart_data = (sol_uart_data *)data;
-    Nan::Callback *callback = uart_data->tx_cb;
-    if (!callback)
-        return;
+NAN_METHOD(bind_sol_uart_read) {
+    VALIDATE_ARGUMENT_COUNT(info, 1);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsObject);
 
-    if (status >= 0) {
-        Local <Object> bufObj;
-        bufObj = Nan::NewBuffer((char *)tx, status).ToLocalChecked();
-        buffer = bufObj;
-    } else {
-        buffer = Nan::Null();
+    Local<Object> jsUART = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_uart_data *uart_data = (sol_uart_data *)SolUART::Resolve(jsUART);
+    if (!uart_data)
+        return;
+    sol_uart *uart = uart_data->uart;
+
+    struct sol_buffer rx_buffer;
+    sol_buffer_flags flags = (sol_buffer_flags) (SOL_BUFFER_FLAGS_DEFAULT |
+        SOL_BUFFER_FLAGS_NO_NUL_BYTE);
+
+    sol_buffer_init_flags(&rx_buffer, NULL, 0, flags);
+    int result = sol_uart_read(uart, &rx_buffer);
+
+    if (result < 0) {
+        Nan::ThrowError("Could not read data from UART");
+        return ;
     }
 
-    Local<Value> arguments[2] = {
-        buffer,
-        Nan::New(status)
-    };
-    callback->Call(2, arguments);
-
-    delete callback;
+    struct sol_str_slice slice;
+    slice = sol_buffer_get_slice(&rx_buffer);
+    char *rx = sol_str_slice_to_string(slice);
+    if (rx)
+        info.GetReturnValue().Set(Nan::NewBuffer(rx, slice.len).ToLocalChecked());
 }
 
 NAN_METHOD(bind_sol_uart_write) {
-    VALIDATE_ARGUMENT_COUNT(info, 3);
+    VALIDATE_ARGUMENT_COUNT(info, 2);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsObject);
     VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 1, IsObject);
-    VALIDATE_ARGUMENT_TYPE(info, 2, IsFunction);
 
     Local<Object> jsUART = Nan::To<Object>(info[0]).ToLocalChecked();
     sol_uart_data *uart_data = (sol_uart_data *)SolUART::Resolve(jsUART);
@@ -139,35 +178,27 @@ NAN_METHOD(bind_sol_uart_write) {
         return;
 
     sol_uart *uart = uart_data->uart;
-    unsigned char *outputBuffer = (unsigned char *) 0;
-
     if (!node::Buffer::HasInstance(info[1])) {
         Nan::ThrowTypeError("Argument 1 must be a Buffer");
         return;
     }
 
+    struct sol_blob *blob;
     size_t length = node::Buffer::Length(info[1]);
-
-    outputBuffer = (unsigned char *) malloc(length * sizeof(unsigned char));
-    if (!outputBuffer) {
-        Nan::ThrowError("Failed to allocate memory for output buffer");
+    void *mem =  malloc(length);
+    if (!mem) {
+        Nan::ThrowError("Failed to allocate memory");
         return;
     }
 
-    memcpy(outputBuffer, node::Buffer::Data(info[1]), length);
-
-    Nan::Callback *callback =
-        new Nan::Callback(Local<Function>::Cast(info[2]));
-    bool returnValue =
-        sol_uart_write(uart, outputBuffer, length, sol_uart_write_callback,
-            uart_data);
-
-    if (!returnValue) {
-        delete callback;
-        free(outputBuffer);
-    } else {
-        uart_data->tx_cb = callback;
+    memcpy(mem, node::Buffer::Data(info[1]), length);
+    blob = sol_blob_new(SOL_BLOB_TYPE_DEFAULT, NULL, mem, length);
+    if (!blob) {
+        free(mem);
     }
+
+    int returnValue = sol_uart_write(uart, blob);
+    sol_blob_unref(blob);
 
     info.GetReturnValue().Set(Nan::New(returnValue));
 }
@@ -195,6 +226,23 @@ NAN_METHOD(bind_sol_uart_baud_rate_to_str) {
     }
 }
 
+NAN_METHOD(bind_sol_uart_get_pending_write_bytes) {
+    VALIDATE_ARGUMENT_COUNT(info, 1);
+    VALIDATE_ARGUMENT_TYPE_OR_NULL(info, 0, IsObject);
+    Local<Object> jsUART = Nan::To<Object>(info[0]).ToLocalChecked();
+    sol_uart_data *uart_data = (sol_uart_data *)SolUART::Resolve(jsUART);
+    if (!uart_data)
+        return;
+
+    sol_uart *uart = uart_data->uart;
+    size_t pending;
+    int result = sol_uart_get_pending_write_bytes(uart, &pending);
+    if (result < 0)
+        return;
+
+    info.GetReturnValue().Set(Nan::New((int)pending));
+}
+
 NAN_METHOD(bind_sol_uart_data_bits_from_str) {
     VALIDATE_ARGUMENT_COUNT(info, 1);
     VALIDATE_ARGUMENT_TYPE(info, 0, IsString);
@@ -209,12 +257,12 @@ NAN_METHOD(bind_sol_uart_data_bits_to_str) {
     VALIDATE_ARGUMENT_TYPE(info, 0, IsInt32);
 
     const char *idString = sol_uart_data_bits_to_str(
-        (sol_uart_data_bits)info[0]->Uint32Value());
+        (sol_uart_data_bits)info[0]->Int32Value());
 
     if (idString) {
         info.GetReturnValue().Set(Nan::New(idString).ToLocalChecked());
     } else {
-       info.GetReturnValue().Set(Nan::Null());
+        info.GetReturnValue().Set(Nan::Null());
     }
 }
 
@@ -232,12 +280,12 @@ NAN_METHOD(bind_sol_uart_stop_bits_to_str) {
     VALIDATE_ARGUMENT_TYPE(info, 0, IsInt32);
 
     const char *idString = sol_uart_stop_bits_to_str(
-        (sol_uart_stop_bits)info[0]->Uint32Value());
+        (sol_uart_stop_bits)info[0]->Int32Value());
 
     if (idString) {
         info.GetReturnValue().Set(Nan::New(idString).ToLocalChecked());
     } else {
-       info.GetReturnValue().Set(Nan::Null());
+        info.GetReturnValue().Set(Nan::Null());
     }
 }
 
@@ -255,11 +303,11 @@ NAN_METHOD(bind_sol_uart_parity_to_str) {
     VALIDATE_ARGUMENT_TYPE(info, 0, IsInt32);
 
     const char *idString = sol_uart_parity_to_str(
-        (sol_uart_parity)info[0]->Uint32Value());
+        (sol_uart_parity)info[0]->Int32Value());
 
     if (idString) {
         info.GetReturnValue().Set(Nan::New(idString).ToLocalChecked());
     } else {
-       info.GetReturnValue().Set(Nan::Null());
+        info.GetReturnValue().Set(Nan::Null());
     }
 }

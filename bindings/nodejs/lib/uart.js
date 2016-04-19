@@ -36,9 +36,14 @@ exports.open = function( init ) {
             parity: soletta.sol_uart_parity_from_str( parity ),
             stop_bits: soletta.sol_uart_stop_bits_from_str( stopBits ),
             flow_control: flowControl,
-            callback: function( data ) {
+            rx_callback: function() {
                 callback_data[0].dispatchEvent( "read", {
                     type: "read",
+                } );
+            },
+            tx_callback: function( data, count ) {
+                callback_data[0].dispatchEvent( "write", {
+                    type: "write",
                     data: data
                 } );
             },
@@ -73,21 +78,28 @@ _.extend( UARTConnection.prototype, {
             else
                 buffer = new Buffer( value );
 
-            var returnStatus = soletta.sol_uart_write( this._connection, buffer,
-                function( data, dataSize ) {
-                    fulfill();
-            });
-
-            if ( !returnStatus ) {
+            var returnStatus = soletta.sol_uart_write( this._connection, buffer);
+            if ( returnStatus === 0 ) {
+                fulfill();
+            } else {
                 reject( new Error( "UART transmission failed" ) );
             }
         }, this ) );
     },
 
-    close: function() {
+    read: function() {
         return new Promise( _.bind( function( fulfill, reject ) {
-            fulfill( soletta.sol_uart_close( this._connection) );
+            var returnStatus = soletta.sol_uart_read( this._connection);
+            if ( returnStatus ) {
+                fulfill(returnStatus);
+            } else {
+                reject( new Error( "Could not read data from UART" ) );
+            }
         }, this ) );
+    },
+
+    close: function() {
+        soletta.sol_uart_close( this._connection);
     },
 
     addEventListener: UARTConnection.prototype.addListener,
